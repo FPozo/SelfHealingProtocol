@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 50;
+	objectVersion = 51;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -41,7 +41,11 @@
 		6085E50E21A40F0C00F13E7B = {
 			isa = PBXGroup;
 			children = (
-				6085E51921A40F0C00F13E7B /* SelfHealingProtocol */,
+				6085E52521A410AD00F13E7B /* SelfHealingProtocol */,
+				6085E52421A4109E00F13E7B /* Evaluator */,
+				6085E52321A4107900F13E7B /* Simulator */,
+				6085E52221A4106D00F13E7B /* NetworkGenerator */,
+				6085E51921A40F0C00F13E7B /* Scheduler */,
 				6085E51821A40F0C00F13E7B /* Products */,
 			);
 			sourceTree = "<group>";
@@ -54,10 +58,38 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		6085E51921A40F0C00F13E7B /* SelfHealingProtocol */ = {
+		6085E51921A40F0C00F13E7B /* Scheduler */ = {
 			isa = PBXGroup;
 			children = (
 				6085E51A21A40F0C00F13E7B /* main.c */,
+			);
+			path = Scheduler;
+			sourceTree = "<group>";
+		};
+		6085E52221A4106D00F13E7B /* NetworkGenerator */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = NetworkGenerator;
+			sourceTree = "<group>";
+		};
+		6085E52321A4107900F13E7B /* Simulator */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Simulator;
+			sourceTree = "<group>";
+		};
+		6085E52421A4109E00F13E7B /* Evaluator */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Evaluator;
+			sourceTree = "<group>";
+		};
+		6085E52521A410AD00F13E7B /* SelfHealingProtocol */ = {
+			isa = PBXGroup;
+			children = (
 			);
 			path = SelfHealingProtocol;
 			sourceTree = "<group>";
@@ -97,7 +129,7 @@
 				};
 			};
 			buildConfigurationList = 6085E51221A40F0C00F13E7B /* Build configuration list for PBXProject "SelfHealingProtocol" */;
-			compatibilityVersion = "Xcode 9.3";
+			compatibilityVersion = "Xcode 10.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
