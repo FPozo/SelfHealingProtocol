@@ -25,6 +25,9 @@
 /* Begin PBXFileReference section */
 		6085E51721A40F0C00F13E7B /* SelfHealingProtocol */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = SelfHealingProtocol; sourceTree = BUILT_PRODUCTS_DIR; };
 		6085E51A21A40F0C00F13E7B /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
+		6085E53521A414A900F13E7B /* main.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = main.py; sourceTree = "<group>"; };
+		6085E53621A414EB00F13E7B /* main.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = main.py; sourceTree = "<group>"; };
+		6085E53721A414FE00F13E7B /* main.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = main.py; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -41,11 +44,7 @@
 		6085E50E21A40F0C00F13E7B = {
 			isa = PBXGroup;
 			children = (
-				6085E52521A410AD00F13E7B /* SelfHealingProtocol */,
-				6085E52421A4109E00F13E7B /* Evaluator */,
-				6085E52321A4107900F13E7B /* Simulator */,
-				6085E52221A4106D00F13E7B /* NetworkGenerator */,
-				6085E51921A40F0C00F13E7B /* Scheduler */,
+				6085E51921A40F0C00F13E7B /* SelfHealingProtocol */,
 				6085E51821A40F0C00F13E7B /* Products */,
 			);
 			sourceTree = "<group>";
@@ -58,7 +57,19 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		6085E51921A40F0C00F13E7B /* Scheduler */ = {
+		6085E51921A40F0C00F13E7B /* SelfHealingProtocol */ = {
+			isa = PBXGroup;
+			children = (
+				6085E53421A4146000F13E7B /* ConfigurationFIles */,
+				6085E53321A4144F00F13E7B /* Simulator */,
+				6085E53221A4144700F13E7B /* Evaluator */,
+				6085E53121A4142800F13E7B /* NetworkGenerator */,
+				6085E53021A4140000F13E7B /* Scheduler */,
+			);
+			path = SelfHealingProtocol;
+			sourceTree = "<group>";
+		};
+		6085E53021A4140000F13E7B /* Scheduler */ = {
 			isa = PBXGroup;
 			children = (
 				6085E51A21A40F0C00F13E7B /* main.c */,
@@ -66,32 +77,35 @@
 			path = Scheduler;
 			sourceTree = "<group>";
 		};
-		6085E52221A4106D00F13E7B /* NetworkGenerator */ = {
+		6085E53121A4142800F13E7B /* NetworkGenerator */ = {
 			isa = PBXGroup;
 			children = (
+				6085E53521A414A900F13E7B /* main.py */,
 			);
 			path = NetworkGenerator;
 			sourceTree = "<group>";
 		};
-		6085E52321A4107900F13E7B /* Simulator */ = {
+		6085E53221A4144700F13E7B /* Evaluator */ = {
 			isa = PBXGroup;
 			children = (
-			);
-			path = Simulator;
-			sourceTree = "<group>";
-		};
-		6085E52421A4109E00F13E7B /* Evaluator */ = {
-			isa = PBXGroup;
-			children = (
+				6085E53621A414EB00F13E7B /* main.py */,
 			);
 			path = Evaluator;
 			sourceTree = "<group>";
 		};
-		6085E52521A410AD00F13E7B /* SelfHealingProtocol */ = {
+		6085E53321A4144F00F13E7B /* Simulator */ = {
+			isa = PBXGroup;
+			children = (
+				6085E53721A414FE00F13E7B /* main.py */,
+			);
+			path = Simulator;
+			sourceTree = "<group>";
+		};
+		6085E53421A4146000F13E7B /* ConfigurationFIles */ = {
 			isa = PBXGroup;
 			children = (
 			);
-			path = SelfHealingProtocol;
+			path = ConfigurationFIles;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
