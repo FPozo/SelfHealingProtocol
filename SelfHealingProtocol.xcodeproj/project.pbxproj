@@ -23,6 +23,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		606ED9B321D237560081802B /* NetworkGenerator */ = {isa = PBXFileReference; lastKnownFileType = folder; path = NetworkGenerator; sourceTree = "<group>"; };
+		606ED9B721D2AC240081802B /* Configuration.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = Configuration.xml; sourceTree = "<group>"; };
 		6085E51721A40F0C00F13E7B /* SelfHealingProtocol */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = SelfHealingProtocol; sourceTree = BUILT_PRODUCTS_DIR; };
 		6085E51A21A40F0C00F13E7B /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
 		6085E53521A414A900F13E7B /* main.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = main.py; sourceTree = "<group>"; };
@@ -41,6 +43,22 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		606ED9B521D2ABC90081802B /* ConfigurationFiles */ = {
+			isa = PBXGroup;
+			children = (
+				606ED9B621D2ABD80081802B /* Configurations */,
+			);
+			path = ConfigurationFiles;
+			sourceTree = "<group>";
+		};
+		606ED9B621D2ABD80081802B /* Configurations */ = {
+			isa = PBXGroup;
+			children = (
+				606ED9B721D2AC240081802B /* Configuration.xml */,
+			);
+			path = Configurations;
+			sourceTree = "<group>";
+		};
 		6085E50E21A40F0C00F13E7B = {
 			isa = PBXGroup;
 			children = (
@@ -60,7 +78,7 @@
 		6085E51921A40F0C00F13E7B /* SelfHealingProtocol */ = {
 			isa = PBXGroup;
 			children = (
-				6085E53421A4146000F13E7B /* ConfigurationFIles */,
+				606ED9B521D2ABC90081802B /* ConfigurationFiles */,
 				6085E53321A4144F00F13E7B /* Simulator */,
 				6085E53221A4144700F13E7B /* Evaluator */,
 				6085E53121A4142800F13E7B /* NetworkGenerator */,
@@ -80,6 +98,7 @@
 		6085E53121A4142800F13E7B /* NetworkGenerator */ = {
 			isa = PBXGroup;
 			children = (
+				606ED9B321D237560081802B /* NetworkGenerator */,
 				6085E53521A414A900F13E7B /* main.py */,
 			);
 			path = NetworkGenerator;
@@ -99,13 +118,6 @@
 				6085E53721A414FE00F13E7B /* main.py */,
 			);
 			path = Simulator;
-			sourceTree = "<group>";
-		};
-		6085E53421A4146000F13E7B /* ConfigurationFIles */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = ConfigurationFIles;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */

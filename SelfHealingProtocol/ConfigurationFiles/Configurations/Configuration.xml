@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<NetworkConfiguration>
+    <GeneralInformation>
+        <SwitchInformation>
+            <MinimumTime unit="ns">1</MinimumTime>
+        </SwitchInformation>
+        <SelfHealingProtocol>
+            <Period unit="ms">1</Period>
+            <Time unit="us">1</Time>
+        </SelfHealingProtocol>
+    </GeneralInformation>
+    <TopologyInformation>
+        <Node category="EndSystem">
+            <NodeID>0</NodeID>
+            <Connection>
+                <NodeID>1</NodeID>
+                <Link category="Wired">
+                    <LinkID>0</LinkID>
+                    <Speed unit="MBs">100</Speed>
+                </Link>
+            </Connection>
+        </Node>
+        <Node category="Switch">
+            <NodeID>1</NodeID>
+            <Connection>
+                <NodeID>0</NodeID>
+                <Link category="Wired">
+                    <LinkID>1</LinkID>
+                    <Speed unit="MBs">100</Speed>
+                </Link>
+            </Connection>
+            <Connection>
+                <NodeID>2</NodeID>
+                <Link category="Wired">
+                    <LinkID>2</LinkID>
+                    <Speed unit="MBs">100</Speed>
+                </Link>
+            </Connection>
+        </Node>
+        <Node category="EndSystem">
+            <NodeID>2</NodeID>
+            <Connection>
+                <NodeID>1</NodeID>
+                <Link category="Wired">
+                    <LinkID>3</LinkID>
+                    <Speed unit="MBs">100</Speed>
+                </Link>
+            </Connection>
+        </Node>
+    </TopologyInformation>
+</NetworkConfiguration>
