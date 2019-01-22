@@ -1,51 +1,105 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<NetworkConfiguration>
-    <GeneralInformation>
-        <SwitchInformation>
-            <MinimumTime unit="ns">1</MinimumTime>
-        </SwitchInformation>
-        <SelfHealingProtocol>
-            <Period unit="ms">1</Period>
-            <Time unit="us">1</Time>
-        </SelfHealingProtocol>
-    </GeneralInformation>
-    <TopologyInformation>
-        <Node category="EndSystem">
-            <NodeID>0</NodeID>
-            <Connection>
+<Configuration>
+    <Network>
+        <GeneralInformation>
+            <SwitchInformation>
+                <MinimumTime unit="ns">1</MinimumTime>
+            </SwitchInformation>
+            <SelfHealingProtocol>
+                <Period unit="ms">1</Period>
+                <Time unit="us">1</Time>
+            </SelfHealingProtocol>
+        </GeneralInformation>
+        <TopologyInformation>
+            <Node category="EndSystem">
+                <NodeID>5</NodeID>
+                <Connection>
+                    <NodeID>1</NodeID>
+                    <Link category="Wired">
+                        <LinkID>0</LinkID>
+                        <Speed unit="MBs">100</Speed>
+                    </Link>
+                </Connection>
+            </Node>
+            <Node category="Switch">
                 <NodeID>1</NodeID>
-                <Link category="Wired">
-                    <LinkID>0</LinkID>
-                    <Speed unit="MBs">100</Speed>
-                </Link>
-            </Connection>
-        </Node>
-        <Node category="Switch">
-            <NodeID>1</NodeID>
-            <Connection>
-                <NodeID>0</NodeID>
-                <Link category="Wired">
-                    <LinkID>1</LinkID>
-                    <Speed unit="MBs">100</Speed>
-                </Link>
-            </Connection>
-            <Connection>
+                <Connection>
+                    <NodeID>5</NodeID>
+                    <Link category="Wired">
+                        <LinkID>1</LinkID>
+                        <Speed unit="MBs">100</Speed>
+                    </Link>
+                </Connection>
+                <Connection>
+                    <NodeID>2</NodeID>
+                    <Link category="Wired">
+                        <LinkID>2</LinkID>
+                        <Speed unit="MBs">100</Speed>
+                    </Link>
+                </Connection>
+            </Node>
+            <Node category="Switch">
                 <NodeID>2</NodeID>
-                <Link category="Wired">
-                    <LinkID>2</LinkID>
-                    <Speed unit="MBs">100</Speed>
-                </Link>
-            </Connection>
-        </Node>
-        <Node category="EndSystem">
-            <NodeID>2</NodeID>
-            <Connection>
-                <NodeID>1</NodeID>
-                <Link category="Wired">
-                    <LinkID>3</LinkID>
-                    <Speed unit="MBs">100</Speed>
-                </Link>
-            </Connection>
-        </Node>
-    </TopologyInformation>
-</NetworkConfiguration>
+                <Connection>
+                    <NodeID>1</NodeID>
+                    <Link category="Wired">
+                        <LinkID>3</LinkID>
+                        <Speed unit="MBs">100</Speed>
+                    </Link>
+                </Connection>
+                <Connection>
+                    <NodeID>3</NodeID>
+                    <Link category="Wired">
+                        <LinkID>4</LinkID>
+                        <Speed unit="MBs">100</Speed>
+                    </Link>
+                </Connection>
+            </Node>
+            <Node category="EndSystem">
+                <NodeID>3</NodeID>
+                <Connection>
+                    <NodeID>2</NodeID>
+                    <Link category="Wired">
+                        <LinkID>5</LinkID>
+                        <Speed unit="MBs">100</Speed>
+                    </Link>
+                </Connection>
+            </Node>
+        </TopologyInformation>
+        <TrafficDescription method="generate">
+            <TrafficInformation>
+                <NumberFrames>10</NumberFrames>
+                <NumberSingle>5</NumberSingle>
+                <NumberLocal>1</NumberLocal>
+                <NumberMulti>1</NumberMulti>
+                <NumberBroadcast>3</NumberBroadcast>
+            </TrafficInformation>
+            <FrameDescription>
+                <FrameType>
+                    <NumberFrames>2</NumberFrames>
+                    <Period unit="ms">1</Period>
+                    <Deadline unit="ms">1</Deadline>
+                    <Size unit="Byte">1500</Size>
+                    <StartingTime unit="ns">0</StartingTime>
+                    <EndToEnd unit="us">200</EndToEnd>
+                </FrameType>
+                <FrameType>
+                    <NumberFrames>3</NumberFrames>
+                    <Period unit="ms">2</Period>
+                    <Deadline unit="ms">2</Deadline>
+                    <Size unit="Byte">1500</Size>
+                    <StartingTime unit="ns">0</StartingTime>
+                    <EndToEnd unit="us">400</EndToEnd>
+                </FrameType>
+                <FrameType>
+                    <NumberFrames>5</NumberFrames>
+                    <Period unit="ms">4</Period>
+                    <Deadline unit="ms">4</Deadline>
+                    <Size unit="Byte">1500</Size>
+                    <StartingTime unit="ns">0</StartingTime>
+                    <EndToEnd unit="us">800</EndToEnd>
+                </FrameType>
+            </FrameDescription>
+        </TrafficDescription>
+    </Network>
+</Configuration>
