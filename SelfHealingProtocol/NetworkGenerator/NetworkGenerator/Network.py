@@ -567,14 +567,16 @@ class Network:
         self.__topology_description = self.__read_topology_xml(network_xml.find('TopologyInformation'))
         self.__read_traffic(network_xml.find('TrafficDescription'))
 
-    def __read_general_information_xml(self, general_information_xml: Xml.Element) -> None:
+    def __read_general_information_xml(self, general_info_xml: Xml.Element) -> None:
         """
         Read the general information of the network configuration xml file
-        :param general_information_xml: pointer to the general information in the tree
+        :param general_info_xml: pointer to the general information in the tree
         :return: nothing
         """
-        self.minimum_switch_time = self.__read_switch_time_xml(general_information_xml.find('SwitchInformation'))
-        self.healing_protocol = self.__read_healing_protocol_xml(general_information_xml.find('SelfHealingProtocol'))
+        self.minimum_switch_time = self.__read_switch_time_xml(general_info_xml.find('SwitchInformation'))
+        healing_protocol_xml: Xml.Element = general_info_xml.find('SelfHealingProtocol')
+        if healing_protocol_xml is not None:
+            self.healing_protocol = self.__read_healing_protocol_xml(general_info_xml.find('SelfHealingProtocol'))
 
     def __read_switch_time_xml(self, switch_information_xml: Xml.Element) -> int:
         """
@@ -769,7 +771,8 @@ class Network:
         :return: nothing
         """
         self.__write_switch_information_xml(Xml.SubElement(general_information_xml, 'SwitchInformation'))
-        self.__write_healing_protocol_xml(Xml.SubElement(general_information_xml, 'SelfHealingProtocol'))
+        if self.healing_protocol is not None:
+            self.__write_healing_protocol_xml(Xml.SubElement(general_information_xml, 'SelfHealingProtocol'))
 
     def __write_switch_information_xml(self, switch_information_xml: Xml.Element) -> None:
         """
