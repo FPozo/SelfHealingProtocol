@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		604ED62C21FF31A5003F527C /* Network.c in Sources */ = {isa = PBXBuildFile; fileRef = 604ED62B21FF31A5003F527C /* Network.c */; };
 		6085E51B21A40F0C00F13E7B /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 6085E51A21A40F0C00F13E7B /* main.c */; };
 /* End PBXBuildFile section */
 
@@ -23,6 +24,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		604ED62A21FF31A5003F527C /* Network.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Network.h; sourceTree = "<group>"; };
+		604ED62B21FF31A5003F527C /* Network.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = Network.c; sourceTree = "<group>"; };
 		606ED9B321D237560081802B /* NetworkGenerator */ = {isa = PBXFileReference; lastKnownFileType = folder; path = NetworkGenerator; sourceTree = "<group>"; };
 		606ED9B821F777910081802B /* Files */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Files; sourceTree = "<group>"; };
 		6085E51721A40F0C00F13E7B /* SelfHealingProtocol */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = SelfHealingProtocol; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -43,6 +46,15 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		604ED62921FF3153003F527C /* Scheduler */ = {
+			isa = PBXGroup;
+			children = (
+				604ED62A21FF31A5003F527C /* Network.h */,
+				604ED62B21FF31A5003F527C /* Network.c */,
+			);
+			path = Scheduler;
+			sourceTree = "<group>";
+		};
 		6085E50E21A40F0C00F13E7B = {
 			isa = PBXGroup;
 			children = (
@@ -75,6 +87,7 @@
 			isa = PBXGroup;
 			children = (
 				6085E51A21A40F0C00F13E7B /* main.c */,
+				604ED62921FF3153003F527C /* Scheduler */,
 			);
 			path = Scheduler;
 			sourceTree = "<group>";
@@ -160,6 +173,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				604ED62C21FF31A5003F527C /* Network.c in Sources */,
 				6085E51B21A40F0C00F13E7B /* main.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -283,6 +297,8 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = H6335V3A36;
+				HEADER_SEARCH_PATHS = /usr/include/libxml2;
+				OTHER_LDFLAGS = "-lxml2";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -292,6 +308,8 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = H6335V3A36;
+				HEADER_SEARCH_PATHS = /usr/include/libxml2;
+				OTHER_LDFLAGS = "-lxml2";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;

@@ -88,11 +88,11 @@
             <Size unit="Byte">1500</Size>
             <StartingTime unit="ns">0</StartingTime>
             <EndToEnd unit="ns">200000</EndToEnd>
-            <SenderID>3</SenderID>
+            <SenderID>5</SenderID>
             <Paths>
                 <Receiver>
-                    <ReceiverID>5</ReceiverID>
-                    <Path>5;3;1</Path>
+                    <ReceiverID>3</ReceiverID>
+                    <Path>0;2;4</Path>
                 </Receiver>
             </Paths>
         </Frame>
@@ -118,11 +118,11 @@
             <Size unit="Byte">1500</Size>
             <StartingTime unit="ns">0</StartingTime>
             <EndToEnd unit="ns">400000</EndToEnd>
-            <SenderID>5</SenderID>
+            <SenderID>3</SenderID>
             <Paths>
                 <Receiver>
-                    <ReceiverID>3</ReceiverID>
-                    <Path>0;2;4</Path>
+                    <ReceiverID>5</ReceiverID>
+                    <Path>5;3;1</Path>
                 </Receiver>
             </Paths>
         </Frame>
@@ -163,11 +163,11 @@
             <Size unit="Byte">1500</Size>
             <StartingTime unit="ns">0</StartingTime>
             <EndToEnd unit="ns">800000</EndToEnd>
-            <SenderID>3</SenderID>
+            <SenderID>5</SenderID>
             <Paths>
                 <Receiver>
-                    <ReceiverID>5</ReceiverID>
-                    <Path>5;3;1</Path>
+                    <ReceiverID>3</ReceiverID>
+                    <Path>0;2;4</Path>
                 </Receiver>
             </Paths>
         </Frame>
