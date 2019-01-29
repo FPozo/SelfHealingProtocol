@@ -18,6 +18,7 @@
 #define Network_h
 
 #include <stdio.h>
+#include <string.h>
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 #include <libxml/xpath.h>
@@ -28,8 +29,59 @@
 #endif /* Network_h */
 
                                                     /* STRUCT DEFINITIONS */
+/**
+ Structure with the information of how the switches behave in the network
+ */
+typedef struct Switch_Information {
+    long long int min_time;             // Minimum time for the switch to process the frame
+}Switch_Information;
+
+/**
+ Structure with the information of the Self-Healing Protocol and its bandwidth reservation
+ */
+typedef struct SelfHealing_Protocol {
+    long long int period;       // Period of the protocol bandwidth reservation
+    long long int time;         // Time of the protocol bandwidth reservation
+}SelfHealing_Protocol;
 
                                                     /* CODE DEFINITIONS */
+
+/* Getters */
+
+/**
+ Get the switch minimum time in ns
+
+ @return switch minimum time in ns
+ */
+long long int get_switch_min_time(void);
+
+/**
+ Get a pointer to the Self-Healing Protocol structure
+
+ @return pointer to the Self_Healing Protocol structure
+ */
+SelfHealing_Protocol * get_healing_protocol(void);
+
+/* Setters */
+
+/**
+ Set the switch information
+ 
+ @param min_time minimum processing time of the switch
+ @return 0 if added correctly, -1 otherwise
+ */
+int set_switch_information(long long int min_time);
+
+/**
+ Set the information fo the Self-Healing Protocol, 0 in both period and time means that it is not active
+
+ @param period period of the protocol in nanoseconds
+ @param time time of the protocol in nanoseconds
+ @return -1 if something went wrong
+ */
+int set_healing_protocol(long long int period, long long int time);
+
+/* Input Functions */
 
 /**
  Read the information of the network in the xml file and saves its information into the internal variables
