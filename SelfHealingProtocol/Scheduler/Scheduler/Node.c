@@ -21,7 +21,7 @@
 /**
  Get the node type
  */
-NodeType get_type(Node *pt) {
+NodeType get_nodetype(Node *pt) {
     
     if (pt == NULL) {
         fprintf(stderr, "The given node pointer is null\n");
@@ -36,7 +36,7 @@ NodeType get_type(Node *pt) {
 /**
  Set the node type
  */
-int set_type(Node *pt, NodeType type) {
+int set_nodetype(Node *pt, NodeType type) {
     
     if (pt == NULL) {
         fprintf(stderr, "The given node pointer is null\n");
@@ -44,5 +44,29 @@ int set_type(Node *pt, NodeType type) {
     }
     
     pt->type = type;
+    return 0;
+}
+
+/**
+ Set the node type by giving a str
+ */
+int set_nodetype_str(Node *pt, char* str_type) {
+    
+    if (pt == NULL) {
+        fprintf(stderr, "The given node pointer is null\n");
+        return -1;
+    }
+    
+    // Check which node type was given as string
+    if (strcmp(str_type, "EndSystem") == 0) {
+        pt->type = EndSystem;
+    } else if (strcmp(str_type, "Switch") == 0) {
+        pt->type = Switch;
+    } else if (strcmp(str_type, "AccessPoint") == 0) {
+        pt->type = AccessPoint;
+    } else {
+        fprintf(stderr, "The given node type is not defined\n");
+        return -1;
+    }
     return 0;
 }

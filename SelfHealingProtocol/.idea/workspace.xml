@@ -2,8 +2,12 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="7d54f8e5-226f-406a-8c5a-196d57811980" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/Scheduler/Scheduler/Link.c" beforeDir="false" afterPath="$PROJECT_DIR$/Scheduler/Scheduler/Link.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Scheduler/Scheduler/Link.h" beforeDir="false" afterPath="$PROJECT_DIR$/Scheduler/Scheduler/Link.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Scheduler/Scheduler/Network.c" beforeDir="false" afterPath="$PROJECT_DIR$/Scheduler/Scheduler/Network.c" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Scheduler/Scheduler/Network.h" beforeDir="false" afterPath="$PROJECT_DIR$/Scheduler/Scheduler/Network.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Scheduler/Scheduler/Node.c" beforeDir="false" afterPath="$PROJECT_DIR$/Scheduler/Scheduler/Node.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Scheduler/Scheduler/Node.h" beforeDir="false" afterPath="$PROJECT_DIR$/Scheduler/Scheduler/Node.h" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -22,7 +26,7 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/NetworkGenerator/NetworkGenerator/Network.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="356">
+            <state relative-caret-position="516">
               <caret line="550" column="47" selection-start-line="550" selection-start-column="47" selection-end-line="550" selection-end-column="47" />
               <folding>
                 <element signature="e#25#1839#1" />
@@ -195,9 +199,9 @@
     </option>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="y" value="390" />
+    <option name="y" value="45" />
     <option name="width" value="1680" />
-    <option name="height" value="1050" />
+    <option name="height" value="1395" />
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="true">
     <ConfirmationsSetting value="1" id="Add" />
@@ -332,18 +336,17 @@
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="82431000" />
+    <option name="totallyTimeSpent" value="82682000" />
   </component>
   <component name="ToolWindowManager">
-    <frame x="0" y="390" width="1680" height="1050" extended-state="0" />
-    <editor active="true" />
+    <frame x="0" y="45" width="1680" height="1395" extended-state="0" />
     <layout>
       <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.14896215" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" />
-      <window_info anchor="bottom" id="Run" order="2" sideWeight="0.49893504" visible="true" weight="0.32045928" />
+      <window_info anchor="bottom" id="Run" order="2" sideWeight="0.49893504" visible="true" weight="0.23561013" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.39711192" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
@@ -492,7 +495,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/NetworkGenerator/NetworkGenerator/Network.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="356">
+        <state relative-caret-position="516">
           <caret line="550" column="47" selection-start-line="550" selection-start-column="47" selection-end-line="550" selection-end-column="47" />
           <folding>
             <element signature="e#25#1839#1" />

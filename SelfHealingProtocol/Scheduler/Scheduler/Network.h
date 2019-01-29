@@ -19,6 +19,8 @@
 
 #include <stdio.h>
 #include <string.h>
+#include "Node.h"
+#include "Link.h"
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 #include <libxml/xpath.h>
@@ -43,6 +45,25 @@ typedef struct SelfHealing_Protocol {
     long long int period;       // Period of the protocol bandwidth reservation
     long long int time;         // Time of the protocol bandwidth reservation
 }SelfHealing_Protocol;
+
+/**
+ Structure with the information of the connection from one node to another node
+ */
+typedef struct Connection_Topology {
+    int node_id;                            // ID of the node
+    // Node *node_pt;                          // Pointer to the node (we not used for now, implement if needed)
+    int link_id;                            // ID of the link
+    Link *link_pt;                          // Pointer to the link
+}Connection_Topology;
+
+/**
+ Structure with the information of a node in the topology and all its outgoing connections
+ */
+typedef struct Node_Topology {
+    int node_id;                            // ID of the node
+    Node *node_pt;                          // Pointer to the node
+    Connection_Topology *connections_pt;    // List of connections of the node
+}Node_Topology;
 
                                                     /* CODE DEFINITIONS */
 

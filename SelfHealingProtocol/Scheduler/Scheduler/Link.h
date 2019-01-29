@@ -15,6 +15,7 @@
 #define Link_h
 
 #include <stdio.h>
+#include <string.h>
 
 #endif /* Link_h */
 
@@ -54,7 +55,7 @@ int get_speed(Link *pt);
  @param pt pointer to the link
  @return link type
  */
-LinkType get_type(Link *pt);
+LinkType get_linktype(Link *pt);
 
 /* Setters */
 
@@ -67,3 +68,13 @@ LinkType get_type(Link *pt);
  @return 0 if done correctly, -1 otherwise
  */
 int set_link(Link *pt, LinkType type, int speed);
+
+/**
+ Set the link information with the type as string
+ 
+ @param pt Pointer to the link
+ @param type string describing the link type
+ @param speed speed of the link in MB/s
+ @return 0 if done correctly, -1 otherwise
+ */
+int set_link_str(Link *pt, char* type, int speed);

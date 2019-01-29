@@ -16,6 +16,7 @@
 #define Node_h
 
 #include <stdio.h>
+#include <string.h>
 
 #endif /* Node_h */
 
@@ -47,7 +48,7 @@ typedef struct Node {
  @param pt pointer to the node
  @return node type
  */
-NodeType get_type(Node *pt);
+NodeType get_nodetype(Node *pt);
 
 /* Setters */
 
@@ -58,4 +59,13 @@ NodeType get_type(Node *pt);
  @param type node type
  @return 0 if done correctly, -1 otherwise
  */
-int set_type(Node *pt, NodeType type);
+int set_nodetype(Node *pt, NodeType type);
+
+/**
+ Set the node type by giving a str
+
+ @param pt pointer to the node
+ @param str_type string with the value to cast to the enum
+ @return 0 if done correctly, -1 otherwise
+ */
+int set_nodetype_str(Node *pt, char* str_type);
