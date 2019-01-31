@@ -2,12 +2,12 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="7d54f8e5-226f-406a-8c5a-196d57811980" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/Scheduler/Scheduler/Link.c" beforeDir="false" afterPath="$PROJECT_DIR$/Scheduler/Scheduler/Link.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Scheduler/Scheduler/Link.h" beforeDir="false" afterPath="$PROJECT_DIR$/Scheduler/Scheduler/Link.h" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Scheduler/Scheduler/Frame.c" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Scheduler/Scheduler/Frame.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../SelfHealingProtocol.xcodeproj/project.pbxproj" beforeDir="false" afterPath="$PROJECT_DIR$/../SelfHealingProtocol.xcodeproj/project.pbxproj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Scheduler/Scheduler/Network.c" beforeDir="false" afterPath="$PROJECT_DIR$/Scheduler/Scheduler/Network.c" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Scheduler/Scheduler/Network.h" beforeDir="false" afterPath="$PROJECT_DIR$/Scheduler/Scheduler/Network.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Scheduler/Scheduler/Node.c" beforeDir="false" afterPath="$PROJECT_DIR$/Scheduler/Scheduler/Node.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Scheduler/Scheduler/Node.h" beforeDir="false" afterPath="$PROJECT_DIR$/Scheduler/Scheduler/Node.h" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -23,7 +23,7 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/NetworkGenerator/NetworkGenerator/Network.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="516">
@@ -170,6 +170,19 @@
           </provider>
         </entry>
       </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/NetworkGenerator/NetworkGenerator/Frame.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="1016">
+              <caret line="102" selection-start-line="102" selection-end-line="102" />
+              <folding>
+                <element signature="e#2083#2104#0" expanded="true" />
+                <element signature="e#9153#9504#0" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
     </leaf>
   </component>
   <component name="FileTemplateManagerImpl">
@@ -199,9 +212,9 @@
     </option>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="y" value="45" />
+    <option name="y" value="30" />
     <option name="width" value="1680" />
-    <option name="height" value="1395" />
+    <option name="height" value="1050" />
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="true">
     <ConfirmationsSetting value="1" id="Add" />
@@ -336,17 +349,18 @@
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="82682000" />
+    <option name="totallyTimeSpent" value="83014000" />
   </component>
   <component name="ToolWindowManager">
-    <frame x="0" y="45" width="1680" height="1395" extended-state="0" />
+    <frame x="0" y="30" width="1680" height="1050" extended-state="0" />
+    <editor active="true" />
     <layout>
       <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.14896215" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" />
-      <window_info anchor="bottom" id="Run" order="2" sideWeight="0.49893504" visible="true" weight="0.23561013" />
+      <window_info anchor="bottom" id="Run" order="2" sideWeight="0.49893504" visible="true" weight="0.32045928" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.39711192" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
@@ -464,17 +478,6 @@
             <element signature="e#1356#1377#0" expanded="true" />
             <element signature="e#1934#2473#0" />
             <element signature="e#2728#3011#0" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/NetworkGenerator/NetworkGenerator/Frame.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1500">
-          <caret line="102" selection-start-line="102" selection-end-line="102" />
-          <folding>
-            <element signature="e#2083#2104#0" expanded="true" />
-            <element signature="e#9153#9504#0" />
           </folding>
         </state>
       </provider>
@@ -634,6 +637,17 @@
             <element signature="e#39808#40004#1" />
             <element signature="e#40137#41676#0" />
             <element signature="e#41362#41676#0" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/NetworkGenerator/NetworkGenerator/Frame.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1016">
+          <caret line="102" selection-start-line="102" selection-end-line="102" />
+          <folding>
+            <element signature="e#2083#2104#0" expanded="true" />
+            <element signature="e#9153#9504#0" />
           </folding>
         </state>
       </provider>

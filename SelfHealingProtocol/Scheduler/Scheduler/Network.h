@@ -21,6 +21,7 @@
 #include <string.h>
 #include "Node.h"
 #include "Link.h"
+#include "Frame.h"
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 #include <libxml/xpath.h>
@@ -64,6 +65,17 @@ typedef struct Node_Topology {
     Node *node_pt;                          // Pointer to the node
     Connection_Topology *connections_pt;    // List of connections of the node
 }Node_Topology;
+
+/**
+ Structure with the information of all the frames in the traffic.
+ There exists also a frame hast to accelerate the finding of a frame by its id
+ */
+typedef struct Traffic {
+    int num_frames;                     // Number of frames in the network
+    Frame *frames;                      // List of all frames and its information
+    int *frames_id;                     // List of all frames ids correlated to the list of Frame struct
+    int *frames_hash;                   // Hash to find a frame by id and accelerate searches
+}Traffic;
 
                                                     /* CODE DEFINITIONS */
 

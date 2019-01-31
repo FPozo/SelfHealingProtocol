@@ -17,7 +17,12 @@
 
 Switch_Information switch_info;     // Information of the behaviour of switches
 SelfHealing_Protocol healing_prot;  // Information of the self-healing protocol characteristics
+int number_nodes;                   // Number of nodes in the network
 Node_Topology *topology;            // Topology of the network saved as a list of all nodes and their connections
+Traffic traffic;                    // Struct that contains all the traffic in the network
+int number_links;                   // Number of links in the network
+int higher_link_id = 0;             // Higher read link id, used for the offset hash accelerator (hopefully not large)
+int higher_frame_id = 0;            // Higher read frame id, used for frame hash accelerator (hopefully not large)
 
                                             /* AUXILIAR FUNCTIONS */
 
@@ -69,6 +74,46 @@ int convert_to_mbs(int value, char* type) {
 }
 
 /**
+ Convert the given value and type to Byte
+
+ @param value given value
+ @param type given type
+ @return value converted to Byte
+ */
+int convert_to_byte(int value, char* type) {
+    
+    if (strcmp(type, "Byte") == 0) {
+        return value;
+    }
+    if (strcmp(type, "KByte") == 0) {
+        return value * 1000;
+    }
+    if (strcmp(type, "MByte") == 0) {
+        return value * 1000000;
+    }
+    fprintf(stderr, "The type was not recognized to convert to Bytes\n");
+    return -1;
+}
+
+/**
+ Search if a given node id was defined in the topology
+
+ @param id node id
+ @return 0 if defined, -1 otherwise
+ */
+int is_node_id_defined(int id) {
+    
+    // Search in all nodes
+    for (int i = 0; i < number_nodes; i++) {
+        if (topology[i].node_id == id) {
+            return 0;
+        }
+    }
+    
+    return -1;
+}
+
+/**
  Given the top xml of the tree and the path, get the time converted to ns
 
  @param top_xml pointer to the top of the tree
@@ -106,6 +151,103 @@ long long int get_time_value_xml(xmlDoc *top_xml, char* path) {
     
     return time;
     
+}
+
+/**
+ Get the time value of a given path in an ocurrence
+
+ @param top_xml pointer to the top of the tree
+ @param path path to find the ocurrence
+ @param num number of the ocurrence
+ @param subpath path inside the ocurrence
+ @return time value in nanoseconds
+ */
+long long int get_occur_time_value_xml(xmlDoc *top_xml, char* path, int num, char* subpath) {
+    
+    // Init xml variables needed to search information in the file
+    xmlChar *value, *value2;
+    xmlXPathContextPtr context, context_value;
+    xmlXPathObjectPtr result, result_value;
+    
+    // Search for the num occurrence
+    context = xmlXPathNewContext(top_xml);
+    result = xmlXPathEvalExpression((xmlChar*) path, context);
+    if (result->nodesetval->nodeNr == 0) {
+        fprintf(stderr, "The searched value is not defined\n");
+        return -1;
+    }
+    if (result->nodesetval->nodeNr < num) {
+        fprintf(stderr, "The searched path does not have as many occurences as searched\n");
+        return -1;
+    }
+    
+    // Set new context to the given num and search for the value
+    context_value = xmlXPathNewContext(top_xml);
+    xmlXPathSetContextNode(result->nodesetval->nodeTab[num], context_value);
+    result_value = xmlXPathEvalExpression((xmlChar*) subpath, context_value);
+    if (result_value->nodesetval->nodeNr == 0) {
+        return -1;
+    }
+    value = xmlNodeListGetString(top_xml, result_value->nodesetval->nodeTab[0]->xmlChildrenNode, 1);
+    value2 = xmlGetProp(result_value->nodesetval->nodeTab[0], (xmlChar*) "unit");
+    
+    // Convert the read value into nanoseconds and save
+    long long int time = atoll((const char*) value);
+    time = convert_to_ns(time, (char*) value2);
+    
+    // Free xml objects
+    xmlFree(value);
+    xmlFree(value2);
+    xmlXPathFreeObject(result);
+    xmlXPathFreeObject(result_value);
+    xmlXPathFreeContext(context);
+    xmlXPathFreeContext(context_value);
+    
+    return time;
+}
+
+int get_occur_size_value_xml(xmlDoc *top_xml, char* path, int num, char* subpath) {
+    
+    // Init xml variables needed to search information in the file
+    xmlChar *value, *value2;
+    xmlXPathContextPtr context, context_value;
+    xmlXPathObjectPtr result, result_value;
+    
+    // Search for the num occurrence
+    context = xmlXPathNewContext(top_xml);
+    result = xmlXPathEvalExpression((xmlChar*) path, context);
+    if (result->nodesetval->nodeNr == 0) {
+        fprintf(stderr, "The searched value is not defined\n");
+        return -1;
+    }
+    if (result->nodesetval->nodeNr < num) {
+        fprintf(stderr, "The searched path does not have as many occurences as searched\n");
+        return -1;
+    }
+    
+    // Set new context to the given num and search for the value
+    context_value = xmlXPathNewContext(top_xml);
+    xmlXPathSetContextNode(result->nodesetval->nodeTab[num], context_value);
+    result_value = xmlXPathEvalExpression((xmlChar*) subpath, context_value);
+    if (result_value->nodesetval->nodeNr == 0) {
+        return -1;
+    }
+    value = xmlNodeListGetString(top_xml, result_value->nodesetval->nodeTab[0]->xmlChildrenNode, 1);
+    value2 = xmlGetProp(result_value->nodesetval->nodeTab[0], (xmlChar*) "unit");
+    
+    // Convert the read value into nanoseconds and save
+    int size = atoi((const char*) value);
+    size = convert_to_byte(size, (char*) value2);
+    
+    // Free xml objects
+    xmlFree(value);
+    xmlFree(value2);
+    xmlXPathFreeObject(result);
+    xmlXPathFreeObject(result_value);
+    xmlXPathFreeContext(context);
+    xmlXPathFreeContext(context_value);
+    
+    return size;
 }
 
 /**
@@ -518,9 +660,11 @@ int read_topology_xml(xmlDoc *top_xml) {
     // Read the number of nodes and allocate the needed memory for the topology
     char *path = "/NetworkConfiguration/TopologyInformation/Node";
     int num_nodes = get_occurences_xml(top_xml, path);
-    if (num_nodes == 0) {
+    if (num_nodes <= 0) {
         fprintf(stderr, "No nodes found in the topology description\n");
     }
+    number_nodes = num_nodes;
+    number_links = 0;
     topology = malloc(sizeof(Node_Topology) * num_nodes);
     for (int i = 0; i < num_nodes; i++) {
         topology[i].node_pt = malloc(sizeof(Node));     // Allocate memory first
@@ -564,7 +708,7 @@ int read_topology_xml(xmlDoc *top_xml) {
         }
         // For all the connections, save the information
         for (int j = 0; j < num_connections; j++) {
-            
+            number_links += 1;
             // Search and save the node id and point to it
             char *value = get_ocurr_in_ocurr_value_xml(top_xml, path, i, "Connection", j, "NodeID");
             if (value == NULL) {
@@ -600,6 +744,9 @@ int read_topology_xml(xmlDoc *top_xml) {
                 }
             }
             topology[i].connections_pt[j].link_id = link_id;
+            if (link_id > higher_link_id) {
+                higher_link_id = link_id;
+            }
             
             // Seach the link type and the speed and save it
             char *link_type = get_prop_occur_in_occur_xml(top_xml, path, i, "Connection", j, "Link", "category");
@@ -611,6 +758,149 @@ int read_topology_xml(xmlDoc *top_xml) {
         }
     }
     
+    return 0;
+}
+
+/**
+ Read the traffic of the network and save it in memory
+
+ @param top_xml pointer to the top of the tree
+ @return 0 if done correctly, -1 otherwise
+ */
+int read_traffic_xml(xmlDoc *top_xml) {
+    
+    // Read the number of frames and allocate the needed memory in the list of frames
+    char *path = "/NetworkConfiguration/TrafficDescription/Frame";
+    int num_frames = get_occurences_xml(top_xml, path);
+    if (num_frames <= 0) {
+        fprintf(stderr, "No frames found in the traffic description\n");
+        return -1;
+    }
+    traffic.num_frames = num_frames;
+    traffic.frames = malloc(sizeof(Frame) * num_frames);
+    traffic.frames_id = malloc(sizeof(int) * num_frames);
+    
+    // For all frames, save its information
+    for (int i = 0; i < num_frames; i++) {
+        
+        // Search and save the frame ID
+        char *value = get_occur_value_xml(top_xml, path, i, "FrameID");
+        if (value == NULL) {
+            fprintf(stderr, "A frameID could not be found\n");
+            return -1;
+        }
+        int frame_id = atoi(value);
+        if (frame_id < 0) {
+            fprintf(stderr, "The frameID should be a natural number\n");
+            return -1;
+        }
+        traffic.frames_id[i] = frame_id;
+        
+        // Seach and save the sender ID
+        value = get_occur_value_xml(top_xml, path, i, "SenderID");
+        if (value == NULL) {
+            fprintf(stderr, "A SenderID could not be found\n");
+            return -1;
+        }
+        int sender_id = atoi(value);
+        if (is_node_id_defined(sender_id) == -1) {
+            fprintf(stderr, "The frame %d has the sender %d not defined in the topology\n", frame_id, sender_id);
+            return -1;
+        }
+        set_sender_id(&traffic.frames[i], sender_id);
+        
+        // Search and save the period
+        long long int period = get_occur_time_value_xml(top_xml, path, i, "Period");
+        if (set_period(&traffic.frames[i], period) == -1) {
+            fprintf(stderr, "The period of the frame %d is not well defined\n", frame_id);
+            return -1;
+        }
+        
+        // Search and save the deadline, deadline == 0 or missing => deadline = period
+        long long int deadline = get_occur_time_value_xml(top_xml, path, i, "Deadline");
+        if (deadline == -1) {
+            set_deadline(&traffic.frames[i], 0);
+        } else {
+            if (set_deadline(&traffic.frames[i], deadline) == -1) {
+                fprintf(stderr, "The deadline of the frame %d is not well defined\n", frame_id);
+                return -1;
+            }
+        }
+        
+        // Search and save the size, size missing or 0 ==> size = 1000 Bytes
+        int size = get_occur_size_value_xml(top_xml, path, i, "Size");
+        if (size == -1 || size == 0) {
+            set_size(&traffic.frames[i], 1000);
+        } else {
+            if (set_size(&traffic.frames[i], size) == -1) {
+                fprintf(stderr, "The size of the frame %d is not well defined\n", frame_id);
+                return -1;
+            }
+        }
+        
+        // Search and save the starting time, starting time missing ==> starting time = 0
+        long long int starting_time = get_occur_time_value_xml(top_xml, path, i, "StartingTime");
+        if (starting_time == -1) {
+            set_starting_time(&traffic.frames[i], 0);
+        } else {
+            if (set_starting_time(&traffic.frames[i], starting_time) == -1) {
+                fprintf(stderr, "The starting time of the frame %d is not well defined\n", frame_id);
+                return -1;
+            }
+        }
+        
+        // Seach and save the end to end time, end to end time missing ==> end to end = 0 => not taken into account
+        long long int end = get_occur_time_value_xml(top_xml, path, i, "EndToEnd");
+        if (end == -1) {
+            set_end_to_end(&traffic.frames[i], 0);
+        } else {
+            if (set_end_to_end(&traffic.frames[i], end) == -1) {
+                fprintf(stderr, "The end to end time of the frame %d is not well defined\n", frame_id);
+                return -1;
+            }
+        }
+        
+        // Read the number of receivers and allocate the needed memory
+        int num_receivers = get_ocurrences_in_ocurrences_xml(top_xml, path, i, "Paths/Receiver");
+        traffic.frames[i].num_paths = num_receivers;
+        traffic.frames[i].receivers_id = malloc(sizeof(int) * num_receivers);
+        traffic.frames[i].list_paths = malloc(sizeof(Path*) * num_receivers);
+        for (int j = 0; j < num_receivers; j++) {
+            
+            // Read the receiver ID
+            value = get_ocurr_in_ocurr_value_xml(top_xml, path, i, "Paths/Receiver", j, "ReceiverID");
+            if (value == NULL) {
+                fprintf(stderr, "A ReceiverID could not be found\n");
+                return -1;
+            }
+            int receiver_id = atoi(value);
+            if (is_node_id_defined(receiver_id) == -1) {
+                fprintf(stderr, "The frame %d has the sender %d not defined in the topology\n", frame_id, receiver_id);
+                return -1;
+            }
+            set_receiver_id(&traffic.frames[i], j, receiver_id);
+            
+            // Read and save the path into the traffic structure
+            value = get_ocurr_in_ocurr_value_xml(top_xml, path, i, "Paths/Receiver", j, "Path");
+            // Parse the string into an array
+            char *link_char = strtok(value, ";");
+            int link_char_it = 0;
+            int *path_array = NULL;
+            // Count the number of hops, to avoid reallocs and potential memory leaks
+            while (link_char != NULL) {
+                if (path_array == NULL) {
+                    path_array = malloc(sizeof(int));
+                } else {
+                    path_array = realloc(path_array, sizeof(int) * link_char_it + 1);
+                }
+                path_array[link_char_it] = atoi(link_char);
+                link_char = strtok(NULL, ";");
+                link_char_it++;
+            }
+            set_path_receiver_id(&traffic.frames[i], receiver_id, path_array, link_char_it);
+            
+        }
+    }
     return 0;
 }
 
@@ -696,6 +986,12 @@ int read_network_xml(char *network_file) {
     // Read the topology of the network
     if (read_topology_xml(top_xml) == -1) {
         fprintf(stderr, "The topology of the network could not be read\n");
+        return -1;
+    }
+    
+    // Read the traffic of the network
+    if (read_traffic_xml(top_xml) == -1) {
+        fprintf(stderr, "The traffic of the network could not be read\n");
         return -1;
     }
     

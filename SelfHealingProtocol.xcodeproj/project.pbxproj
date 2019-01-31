@@ -10,6 +10,7 @@
 		604ED62C21FF31A5003F527C /* Network.c in Sources */ = {isa = PBXBuildFile; fileRef = 604ED62B21FF31A5003F527C /* Network.c */; };
 		604ED62F22004B5D003F527C /* Link.c in Sources */ = {isa = PBXBuildFile; fileRef = 604ED62E22004B5D003F527C /* Link.c */; };
 		604ED63222004FED003F527C /* Node.c in Sources */ = {isa = PBXBuildFile; fileRef = 604ED63122004FED003F527C /* Node.c */; };
+		604ED635220094D8003F527C /* Frame.c in Sources */ = {isa = PBXBuildFile; fileRef = 604ED634220094D8003F527C /* Frame.c */; };
 		6085E51B21A40F0C00F13E7B /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 6085E51A21A40F0C00F13E7B /* main.c */; };
 /* End PBXBuildFile section */
 
@@ -32,6 +33,8 @@
 		604ED62E22004B5D003F527C /* Link.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = Link.c; sourceTree = "<group>"; };
 		604ED63022004FED003F527C /* Node.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Node.h; sourceTree = "<group>"; };
 		604ED63122004FED003F527C /* Node.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = Node.c; sourceTree = "<group>"; };
+		604ED633220094D8003F527C /* Frame.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Frame.h; sourceTree = "<group>"; };
+		604ED634220094D8003F527C /* Frame.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = Frame.c; sourceTree = "<group>"; };
 		606ED9B321D237560081802B /* NetworkGenerator */ = {isa = PBXFileReference; lastKnownFileType = folder; path = NetworkGenerator; sourceTree = "<group>"; };
 		606ED9B821F777910081802B /* Files */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Files; sourceTree = "<group>"; };
 		6085E51721A40F0C00F13E7B /* SelfHealingProtocol */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = SelfHealingProtocol; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -61,6 +64,8 @@
 				604ED62E22004B5D003F527C /* Link.c */,
 				604ED63022004FED003F527C /* Node.h */,
 				604ED63122004FED003F527C /* Node.c */,
+				604ED633220094D8003F527C /* Frame.h */,
+				604ED634220094D8003F527C /* Frame.c */,
 			);
 			path = Scheduler;
 			sourceTree = "<group>";
@@ -186,6 +191,7 @@
 				604ED62C21FF31A5003F527C /* Network.c in Sources */,
 				604ED63222004FED003F527C /* Node.c in Sources */,
 				6085E51B21A40F0C00F13E7B /* main.c in Sources */,
+				604ED635220094D8003F527C /* Frame.c in Sources */,
 				604ED62F22004B5D003F527C /* Link.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
