@@ -2,12 +2,13 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="7d54f8e5-226f-406a-8c5a-196d57811980" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/Scheduler/Scheduler/Frame.c" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Scheduler/Scheduler/Frame.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../SelfHealingProtocol.xcodeproj/project.pbxproj" beforeDir="false" afterPath="$PROJECT_DIR$/../SelfHealingProtocol.xcodeproj/project.pbxproj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Files/Configurations/Configuration.xml" beforeDir="false" afterPath="$PROJECT_DIR$/Files/Configurations/Configuration.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Files/Networks/network.xml" beforeDir="false" afterPath="$PROJECT_DIR$/Files/Networks/network.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Scheduler/Scheduler/Frame.c" beforeDir="false" afterPath="$PROJECT_DIR$/Scheduler/Scheduler/Frame.c" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Scheduler/Scheduler/Frame.h" beforeDir="false" afterPath="$PROJECT_DIR$/Scheduler/Scheduler/Frame.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Scheduler/Scheduler/Network.c" beforeDir="false" afterPath="$PROJECT_DIR$/Scheduler/Scheduler/Network.c" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Scheduler/Scheduler/Network.h" beforeDir="false" afterPath="$PROJECT_DIR$/Scheduler/Scheduler/Network.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Scheduler/main.c" beforeDir="false" afterPath="$PROJECT_DIR$/Scheduler/main.c" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -16,7 +17,7 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="CoverageDataManager">
-    <SUITE FILE_PATH="coverage/SelfHealingProtocol$main.coverage" NAME="main Coverage Results" MODIFIED="1548686729096" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/NetworkGenerator" />
+    <SUITE FILE_PATH="coverage/SelfHealingProtocol$main.coverage" NAME="main Coverage Results" MODIFIED="1548952041040" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/NetworkGenerator" />
   </component>
   <component name="CoverageViewManager">
     <option name="myElementSize" value="426" />
@@ -170,15 +171,24 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/NetworkGenerator/NetworkGenerator/Frame.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1016">
-              <caret line="102" selection-start-line="102" selection-end-line="102" />
+            <state relative-caret-position="356">
+              <caret line="58" column="11" lean-forward="true" selection-start-line="58" selection-start-column="11" selection-end-line="58" selection-end-column="11" />
               <folding>
                 <element signature="e#2083#2104#0" expanded="true" />
                 <element signature="e#9153#9504#0" />
               </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/Files/Configurations/Configuration.xml">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="409">
+              <caret line="97" column="42" selection-start-line="97" selection-start-column="42" selection-end-line="97" selection-end-column="42" />
             </state>
           </provider>
         </entry>
@@ -349,18 +359,18 @@
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="83014000" />
+    <option name="totallyTimeSpent" value="83397000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="30" width="1680" height="1050" extended-state="0" />
     <editor active="true" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.14896215" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.14896215" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" />
-      <window_info anchor="bottom" id="Run" order="2" sideWeight="0.49893504" visible="true" weight="0.32045928" />
+      <window_info active="true" anchor="bottom" id="Run" order="2" sideWeight="0.49893504" visible="true" weight="0.32045928" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.39711192" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
@@ -479,13 +489,6 @@
             <element signature="e#1934#2473#0" />
             <element signature="e#2728#3011#0" />
           </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/Files/Configurations/Configuration.xml">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="105">
-          <caret line="7" selection-start-line="7" selection-end-line="10" selection-end-column="34" />
         </state>
       </provider>
     </entry>
@@ -643,12 +646,19 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/NetworkGenerator/NetworkGenerator/Frame.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1016">
-          <caret line="102" selection-start-line="102" selection-end-line="102" />
+        <state relative-caret-position="356">
+          <caret line="58" column="11" lean-forward="true" selection-start-line="58" selection-start-column="11" selection-end-line="58" selection-end-column="11" />
           <folding>
             <element signature="e#2083#2104#0" expanded="true" />
             <element signature="e#9153#9504#0" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Files/Configurations/Configuration.xml">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="409">
+          <caret line="97" column="42" selection-start-line="97" selection-start-column="42" selection-end-line="97" selection-end-column="42" />
         </state>
       </provider>
     </entry>

@@ -15,5 +15,6 @@ int main(int argc, const char * argv[]) {
     // insert code here...
     printf("Hello, World!\n");
     read_network_xml("/Users/fpo01/OneDrive - Mälardalens högskola/PhD Folder/Software/SelfHealingProtocol/SelfHealingProtocol/Files/Networks/network.xml");
+    prepare_network();
     return 0;
 }

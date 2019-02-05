@@ -21,10 +21,41 @@ int number_nodes;                   // Number of nodes in the network
 Node_Topology *topology;            // Topology of the network saved as a list of all nodes and their connections
 Traffic traffic;                    // Struct that contains all the traffic in the network
 int number_links;                   // Number of links in the network
+long long int hyperperiod = 0;      // HyperPeriod of all the frames in the network
+int size_timeslot = 0;              // Size of time slot in nanoseconds
+
+// Accelerator variables indexed by the ID to find values in O(1)
 int higher_link_id = 0;             // Higher read link id, used for the offset hash accelerator (hopefully not large)
 int higher_frame_id = 0;            // Higher read frame id, used for frame hash accelerator (hopefully not large)
+int higher_node_id = 0;             // Higher read node id, used for frame hash accelerator (hopefully not large)
+Link **link_accelerator;            // List of pointers to the links in the topology indexed by id
+Node **node_accelerator;            // List of pointers to the nodes in the topology indexed by id
+Frame **frame_accelerator;          // List of pointers to the frames in the topology indexed by id
 
                                             /* AUXILIAR FUNCTIONS */
+
+
+/**
+ Greater common divisor of two numbers
+
+ @param a first number
+ @param b second number
+ @return the gcd of a and b
+ */
+long long int gcd(long long int a, long long int b) {
+    // Everything divides 0
+    if (a == 0 || b == 0)
+        return 0;
+    
+    // Base case
+    if (a == b)
+        return a;
+    
+    // a is greater
+    if (a > b)
+        return gcd(a-b, b);
+    return gcd(a, b-a);
+}
 
 /**
  Convert the given value to nanoseconds
@@ -113,9 +144,186 @@ int is_node_id_defined(int id) {
     return -1;
 }
 
+                                                /* FUNCTIONS */
+
+/* Getters */
+
+/**
+ Get the switch minimum time in ns
+ */
+long long int get_switch_min_time(void) {
+    
+    return switch_info.min_time;
+}
+
+/**
+ Get a pointer to the Self-Healing Protocol structure
+ */
+SelfHealing_Protocol * get_healing_protocol(void) {
+    
+    return &healing_prot;
+}
+
+/* Setters */
+
+/**
+ Set the switch information in nanoseconds
+ */
+int set_switch_information(long long int min_time) {
+    
+    if (min_time < 0) {
+        fprintf(stderr, "The switch minimum time should be a natural number");
+        return -1;
+    }
+    
+    switch_info.min_time = min_time;
+    return 0;
+}
+
+/**
+ Set the information fo the Self-Healing Protocol, 0 in both period and time means that it is not active
+ */
+int set_healing_protocol(long long int period, long long int time) {
+    
+    if (period == 0) {
+        healing_prot.period = 0;
+        healing_prot.time = 0;
+    } else if (period < 0 || time <= 0) {
+        fprintf(stderr, "The values in the Self-Healing Protocol should be natural\n");
+        return -1;
+    } else {
+        healing_prot.period = period;
+        healing_prot.time = time;
+    }
+    return 0;
+}
+
+/* Functions */
+
+/**
+ Prepares the Self-Healing Protocol for the scheduler. It creates a fake frame to save all the values
+
+ @return 0 if done correctly, -1 otherwise
+ */
+int prepare_healing_protocol(void) {
+    
+    // If there exists healing protocol, set the frame, otherwise leave it empty
+    if (healing_prot.period != 0) {
+        // Save the size to calculate the larger size slot possible
+        size_timeslot = (int) healing_prot.time;
+        
+        // Save the information of the frame needed
+        set_period(&healing_prot.reservation, healing_prot.period);
+        // We set the transmission time as the size for the special case of a frame reserving bandwidth
+        set_size(&healing_prot.reservation, (int)healing_prot.time);
+        set_deadline(&healing_prot.reservation, healing_prot.period);
+        set_end_to_end(&healing_prot.reservation, 0);
+        set_starting_time(&healing_prot.reservation, 0);
+        
+        // Create the offset iterator and fill the offsets
+        if (init_offset_reservation(&healing_prot.reservation, higher_link_id, hyperperiod) == -1) {
+            fprintf(stderr, "The preparation of the offsets in the self-healing protocol failed\n");
+            return -1;
+        }
+    }
+    
+    return 0;
+}
+
+/**
+ After reading a network it prepares all the needed variables to be ready to be scheduled.
+ This includes allocating offsets, calculating timeslot length, and population needed global variables
+ */
+int prepare_network(void) {
+    
+    // Initialize the offsets of the Self-Healing Protocol
+    if (prepare_healing_protocol() == -1) {
+        fprintf(stderr, "The preparation of the frame in the self-healing protocol failed\n");
+        return -1;
+    }
+    
+    // Initialize the offsets of all the frames
+    for (int i = 0; i < traffic.num_frames; i++) {
+        init_offsets(&traffic.frames[i], higher_link_id, hyperperiod);
+    }
+    
+    // Prepare the hash accelerators ids, first we allocate the needed memory, set everything to NULL, then
+    // iterate over all the defined nodes, links and frames to link the pointers
+    node_accelerator = malloc(sizeof(Node*) * higher_node_id + 1);
+    for (int i = 0; i <= higher_node_id; i++) {
+        node_accelerator[i] = NULL;
+    }
+    link_accelerator = malloc(sizeof(Link*) * higher_link_id + 1);
+    for (int i = 0; i <= higher_link_id; i++) {
+        link_accelerator[i] = NULL;
+    }
+    frame_accelerator = malloc(sizeof(Frame*) * higher_frame_id + 1);
+    for (int i = 0; i <= higher_frame_id; i++) {
+        frame_accelerator[i] = NULL;
+    }
+    
+    for (int i = 0; i < number_nodes; i++) {
+        node_accelerator[topology[i].node_id] = topology[i].node_pt;
+        for (int j = 0; j < topology[i].num_connection; j++) {
+            int link_id = topology[i].connections_pt[j].link_id;
+            if (link_accelerator[link_id] == NULL) {
+                link_accelerator[link_id] = topology[i].connections_pt[j].link_pt;
+            }
+        }
+    }
+    for (int i = 0; i < traffic.num_frames; i++) {
+        frame_accelerator[traffic.frames_id[i]] = &traffic.frames[i];
+    }
+    
+    // Adjust the timeslot to the maximum size possible (1 nanoseconds is the minimum)
+    for (int i = 0; i < traffic.num_frames; i++) {
+        for (int j = 0; j < traffic.frames[i].num_offsets; j++) {
+            int link_id = get_link_id_offset(&traffic.frames[i], j);
+            int time_frame = (get_size(&traffic.frames[i]) * 1000) / get_speed(link_accelerator[link_id]);
+            // Do not allow the time frame to be less than 1ns, force a minimum of 1ns
+            if (time_frame == 0) {
+                time_frame = 1;
+            }
+            if (size_timeslot == 0) {
+                size_timeslot = time_frame;
+            } else {
+                size_timeslot = (int)gcd(size_timeslot, time_frame);
+            }
+        }
+    }
+    // Once we have the minimum possible timeslot, we normalize the values and save it (makes the scheduler faster)
+    for (int i = 0; i < traffic.num_frames; i++) {
+        set_period(&traffic.frames[i], get_period(&traffic.frames[i]) / size_timeslot);
+        set_deadline(&traffic.frames[i], get_deadline(&traffic.frames[i]) / size_timeslot);
+        set_starting_time(&traffic.frames[i], get_starting_time(&traffic.frames[i]) / size_timeslot);
+        set_end_to_end(&traffic.frames[i], get_end_to_end(&traffic.frames[i]) / size_timeslot);
+        for (int j = 0; j < traffic.frames[i].num_offsets; j++) {
+            int link_id = get_link_id_offset(&traffic.frames[i], j);
+            int time_frame = (get_size(&traffic.frames[i]) * 1000) / get_speed(link_accelerator[link_id]);
+            time_frame = time_frame / size_timeslot;
+            set_time_offset_it(&traffic.frames[i], j, time_frame);
+        }
+    }
+    // Also prepare the self healing protocol if active
+    if (healing_prot.period != 0) {
+        set_period(&healing_prot.reservation, get_period(&healing_prot.reservation) / size_timeslot);
+        set_deadline(&healing_prot.reservation, get_deadline(&healing_prot.reservation) / size_timeslot);
+        set_starting_time(&healing_prot.reservation, get_starting_time(&healing_prot.reservation) / size_timeslot);
+        set_end_to_end(&healing_prot.reservation, get_end_to_end(&healing_prot.reservation) / size_timeslot);
+        for (int j = 0; j < healing_prot.reservation.num_offsets; j++) {
+            int time_frame = get_size(&healing_prot.reservation) / size_timeslot;
+            set_time_offset_it(&healing_prot.reservation, j, time_frame);
+        }
+    }
+    
+    return 0;
+}
+
+/* Input Functions */
+
 /**
  Given the top xml of the tree and the path, get the time converted to ns
-
+ 
  @param top_xml pointer to the top of the tree
  @param path path where to find the value
  @return the value read converted to nanoseconds
@@ -155,7 +363,7 @@ long long int get_time_value_xml(xmlDoc *top_xml, char* path) {
 
 /**
  Get the time value of a given path in an ocurrence
-
+ 
  @param top_xml pointer to the top of the tree
  @param path path to find the ocurrence
  @param num number of the ocurrence
@@ -206,6 +414,15 @@ long long int get_occur_time_value_xml(xmlDoc *top_xml, char* path, int num, cha
     return time;
 }
 
+/**
+ Get the size in bytes of a value in an ocurrence
+
+ @param top_xml pointer to the top of the tree
+ @param path to find the occurrence
+ @param num number of the ocurrence
+ @param subpath path to find the value inside the ocurrence
+ @return the found value converted to byes
+ */
 int get_occur_size_value_xml(xmlDoc *top_xml, char* path, int num, char* subpath) {
     
     // Init xml variables needed to search information in the file
@@ -252,7 +469,7 @@ int get_occur_size_value_xml(xmlDoc *top_xml, char* path, int num, char* subpath
 
 /**
  For the given tree and path, return the number of occurrences as a findall search
-
+ 
  @param top_xml pointer to the top of the tree
  @param path path where to search
  @return number of occurrences
@@ -280,7 +497,7 @@ int get_occurences_xml(xmlDoc *top_xml, char* path) {
 
 /**
  For the given tree, and paths, find the number of occurences of the subpath inside the path
-
+ 
  @param top_xml pointer to the top of the tree
  @param path path where to search the first occurrence
  @param num number of the ocurrence
@@ -323,7 +540,7 @@ int get_ocurrences_in_ocurrences_xml(xmlDoc *top_xml, char* path, int num, char*
 
 /**
  Get the name of the given property for a given id of the occurent of the path
-
+ 
  @param top_xml pointer to the top of the tree
  @param path path to search
  @path num id number of the occurence
@@ -364,7 +581,7 @@ char *get_property_occur_xml(xmlDoc *top_xml, char *path, int num, char* propert
 
 /**
  Get the value of the subpath search for the given occurrence
-
+ 
  @param top_xml pointer to the top of the tree
  @param path path of the occurrence
  @param num number of the occurrence
@@ -409,7 +626,7 @@ char *get_occur_value_xml(xmlDoc *top_xml, char *path, int num, char* subpath) {
 
 /**
  Get the property in an occurrence inside an ocurrence with a given final path
-
+ 
  @param top_xml pointer to the top of the tree
  @param path first ocurrence path
  @param num number of the ocurrence
@@ -420,7 +637,7 @@ char *get_occur_value_xml(xmlDoc *top_xml, char *path, int num, char* subpath) {
  @return value of the found property
  */
 char *get_prop_occur_in_occur_xml(xmlDoc *top_xml, char *path, int num, char *subpath, int subnum, char *find_path,
-                                char *property) {
+                                  char *property) {
     
     // Init xml variables needed to search information in the file
     xmlChar *value;
@@ -469,7 +686,7 @@ char *get_prop_occur_in_occur_xml(xmlDoc *top_xml, char *path, int num, char *su
 
 /**
  Find the value from an ocurrence path inside another occurence path
-
+ 
  @param top_xml pointer to the top of the tree
  @param path first ocurrence path
  @param num number in the ocurrence
@@ -589,12 +806,12 @@ int get_occur_in_ocurr_speed_value_xml(xmlDoc *top_xml, char *path, int num, cha
 
 /**
  Read the switch information and save its into memory
-
+ 
  @param top_xml pointer to the top of the network xml file
  @return 0 if all information was saved correctly, -1 otherwise
  */
 int read_switch_xml(xmlDoc *top_xml) {
-
+    
     char* path = "/NetworkConfiguration/GeneralInformation/SwitchInformation/MinimumTime";
     long long int switch_time = get_time_value_xml(top_xml, path);
     set_switch_information(switch_time);
@@ -630,7 +847,7 @@ int read_healing_protocol_xml(xmlDoc *top_xml) {
 
 /**
  Read the general information of the network and add its into the Network variables
-
+ 
  @param top_xml pointer to general information tree
  @return 0 if all information was saved correctly, -1 otherwise
  */
@@ -651,12 +868,12 @@ int read_general_information_xml(xmlDoc *top_xml) {
 
 /**
  Read and save the information of the topology
-
+ 
  @param top_xml pointer to the top of the tree
  @return 0 if read and saved correctly, -1 otherwise
  */
 int read_topology_xml(xmlDoc *top_xml) {
- 
+    
     // Read the number of nodes and allocate the needed memory for the topology
     char *path = "/NetworkConfiguration/TopologyInformation/Node";
     int num_nodes = get_occurences_xml(top_xml, path);
@@ -691,6 +908,9 @@ int read_topology_xml(xmlDoc *top_xml) {
             fprintf(stderr, "The node id needs to be a natural number\n");
             return -1;
         }
+        if (node_id > higher_node_id) {
+            higher_node_id = node_id;
+        }
         // Check if the node was defined before
         for (int j = 0; j < i; j++) {
             if (topology[j].node_id == node_id) {
@@ -703,6 +923,7 @@ int read_topology_xml(xmlDoc *top_xml) {
         // Read the number of connections and allocate the needed memory, also allocate all the pointers correctly
         int num_connections = get_ocurrences_in_ocurrences_xml(top_xml, path, i, "Connection");
         topology[i].connections_pt = malloc(sizeof(Connection_Topology) * num_connections);
+        topology[i].num_connection = num_connections;
         for (int j = 0; j < num_connections; j++) {
             topology[i].connections_pt[j].link_pt = malloc(sizeof(Link));
         }
@@ -763,7 +984,7 @@ int read_topology_xml(xmlDoc *top_xml) {
 
 /**
  Read the traffic of the network and save it in memory
-
+ 
  @param top_xml pointer to the top of the tree
  @return 0 if done correctly, -1 otherwise
  */
@@ -794,6 +1015,9 @@ int read_traffic_xml(xmlDoc *top_xml) {
             fprintf(stderr, "The frameID should be a natural number\n");
             return -1;
         }
+        if (frame_id > higher_frame_id) {
+            higher_frame_id = frame_id;
+        }
         traffic.frames_id[i] = frame_id;
         
         // Seach and save the sender ID
@@ -814,6 +1038,17 @@ int read_traffic_xml(xmlDoc *top_xml) {
         if (set_period(&traffic.frames[i], period) == -1) {
             fprintf(stderr, "The period of the frame %d is not well defined\n", frame_id);
             return -1;
+        }
+        // Recalculate the hyperperiod
+        if (hyperperiod == 0) {
+            hyperperiod = period;
+        } else {
+            long long int gcdnum = gcd(hyperperiod, period);
+            if (gcdnum <= 0) {
+                fprintf(stderr, "Something went really wrong when calculating the hyperperiod\n");
+                return -1;
+            }
+            hyperperiod = (hyperperiod * period) / gcdnum;
         }
         
         // Search and save the deadline, deadline == 0 or missing => deadline = period
@@ -864,7 +1099,7 @@ int read_traffic_xml(xmlDoc *top_xml) {
         int num_receivers = get_ocurrences_in_ocurrences_xml(top_xml, path, i, "Paths/Receiver");
         traffic.frames[i].num_paths = num_receivers;
         traffic.frames[i].receivers_id = malloc(sizeof(int) * num_receivers);
-        traffic.frames[i].list_paths = malloc(sizeof(Path*) * num_receivers);
+        traffic.frames[i].list_paths = malloc(sizeof(Path) * num_receivers);
         for (int j = 0; j < num_receivers; j++) {
             
             // Read the receiver ID
@@ -904,62 +1139,6 @@ int read_traffic_xml(xmlDoc *top_xml) {
     return 0;
 }
 
-                                                /* FUNCTIONS */
-
-/* Getters */
-
-/**
- Get the switch minimum time in ns
- */
-long long int get_switch_min_time(void) {
-    
-    return switch_info.min_time;
-}
-
-/**
- Get a pointer to the Self-Healing Protocol structure
- */
-SelfHealing_Protocol * get_healing_protocol(void) {
-    
-    return &healing_prot;
-}
-
-/* Setters */
-
-/**
- Set the switch information in nanoseconds
- */
-int set_switch_information(long long int min_time) {
-    
-    if (min_time < 0) {
-        fprintf(stderr, "The switch minimum time should be a natural number");
-        return -1;
-    }
-    
-    switch_info.min_time = min_time;
-    return 0;
-}
-
-/**
- Set the information fo the Self-Healing Protocol, 0 in both period and time means that it is not active
- */
-int set_healing_protocol(long long int period, long long int time) {
-    
-    if (period == 0) {
-        healing_prot.period = 0;
-        healing_prot.time = 0;
-    } else if (period < 0 || time <= 0) {
-        fprintf(stderr, "The values in the Self-Healing Protocol should be natural\n");
-        return -1;
-    } else {
-        healing_prot.period = period;
-        healing_prot.time = time;
-    }
-    return 0;
-}
-
-/* Input Functions */
-
 /**
  Reads the given network xml file and parse everything into the network variables.
  It starts reading the general information of the network.
@@ -995,6 +1174,6 @@ int read_network_xml(char *network_file) {
         return -1;
     }
     
-    printf("It is working for now\n");
+    xmlFreeDoc(top_xml);
     return 0;
 }

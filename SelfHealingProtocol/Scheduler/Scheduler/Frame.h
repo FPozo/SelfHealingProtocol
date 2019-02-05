@@ -53,8 +53,11 @@ typedef struct Frame {
     int num_paths;                      // Number of paths in the frame
     int sender_id;                      // Sender ID of the frame
     int *receivers_id;                  // Receivers ID for every of the paths
-    Path **list_paths;                  // List of pointers to all the paths in the frame
-    Offset **offset_hash;               // List that stores the offsets with index the link identifier to accelerate
+    Path *list_paths;                   // List paths structures in the frame
+    Offset **offset_hash;               // List that stores the offsets pointers with index the link identifier
+                                        // to accelerate (we have double reference because we want to have NULL!)
+    int num_offsets;                    // Number of offsets needed to iterate over the offset iteration
+    Offset **offset_it;                 // List that stores pointers to the Offset so we can iterate over faster
 }Frame;
 
                                                 /* CODE DEFINITIONS */
@@ -117,6 +120,23 @@ long long int get_starting_time(Frame *pt);
  @return end to end time of the frame in nanoseconds
  */
 long long int get_end_to_end(Frame *pt);
+
+/**
+ Get the number of different offsets of the frame
+
+ @param pt pointer to the frame
+ @return number of different offsets of the frame, -1 if something was wrong
+ */
+int get_num_offsets(Frame *pt);
+
+/**
+ Get the link id of the frame by the offset iteration
+
+ @param pt pointer to the frame
+ @param offset_it position in the offset iteration
+ @return link id, -1 if something was wrong
+ */
+int get_link_id_offset(Frame *pt, int offset_it);
 
 /* Setters */
 
@@ -194,3 +214,38 @@ int set_end_to_end(Frame *pt, long long int end_to_end);
  @return 0 if done correctly, -1 otherwise
  */
 int set_path_receiver_id(Frame *pt, int receiver_id, int *path, int len);
+
+/**
+ Set the time to transmit the offset
+
+ @param pt pointer to the frame
+ @param offset_it offset it number
+ @param time time to transmit the offset
+ @return 0 if done correctly, -1 otherwise
+ */
+int set_time_offset_it(Frame *pt, int offset_it, int time);
+
+/* Functions */
+
+/**
+ Initialize all the offsets once the frame values and the paths are filled
+
+ @param pt pointer to the frame
+ @param max_link_id maximum link id needed to init the offset hash
+ @param hyperperiod hyperperiod of the schedule needed to calculate the frame number of instances
+ @return 0 if done correctly, -1 otherwise
+ */
+int init_offsets(Frame *pt, int max_link_id, long long int hyperperiod);
+
+/**
+ Initialize all the offsets for a reservation frame.
+ This frame is special as only has filled the offset iterator for all the links, with already filled transmission
+ times.
+ The purpose of these kind of frames is to avoid other frames to be transmitted in the times the reservation is active.
+
+ @param pt pointer to the reservation frame
+ @param max_link_id maximum link id needed to init the offset hash
+ @param hyperperiod of the schedule needed to calculate the frame number of instances
+ @return 0 if done correctly, -1 otherwise
+ */
+int init_offset_reservation(Frame *pt, int max_link_id, long long int hyperperiod);

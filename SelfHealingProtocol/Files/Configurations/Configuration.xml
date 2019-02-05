@@ -79,7 +79,7 @@
                     <NumberFrames>2</NumberFrames>
                     <Period unit="ms">1</Period>
                     <Deadline unit="ms">1</Deadline>
-                    <Size unit="Byte">1500</Size>
+                    <Size unit="Byte">1000</Size>
                     <StartingTime unit="ns">0</StartingTime>
                     <EndToEnd unit="us">200</EndToEnd>
                 </FrameType>
@@ -87,7 +87,7 @@
                     <NumberFrames>3</NumberFrames>
                     <Period unit="ms">2</Period>
                     <Deadline unit="ms">2</Deadline>
-                    <Size unit="Byte">1500</Size>
+                    <Size unit="Byte">1000</Size>
                     <StartingTime unit="ns">0</StartingTime>
                     <EndToEnd unit="us">400</EndToEnd>
                 </FrameType>
@@ -95,7 +95,7 @@
                     <NumberFrames>5</NumberFrames>
                     <Period unit="ms">4</Period>
                     <Deadline unit="ms">4</Deadline>
-                    <Size unit="Byte">1500</Size>
+                    <Size unit="Byte">1000</Size>
                     <StartingTime unit="ns">0</StartingTime>
                     <EndToEnd unit="us">800</EndToEnd>
                 </FrameType>

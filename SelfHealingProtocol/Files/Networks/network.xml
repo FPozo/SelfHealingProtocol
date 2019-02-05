@@ -70,7 +70,7 @@
             <FrameID>0</FrameID>
             <Period unit="ns">1000000</Period>
             <Deadline unit="ns">1000000</Deadline>
-            <Size unit="Byte">1500</Size>
+            <Size unit="Byte">1000</Size>
             <StartingTime unit="ns">0</StartingTime>
             <EndToEnd unit="ns">200000</EndToEnd>
             <SenderID>3</SenderID>
@@ -85,14 +85,14 @@
             <FrameID>1</FrameID>
             <Period unit="ns">1000000</Period>
             <Deadline unit="ns">1000000</Deadline>
-            <Size unit="Byte">1500</Size>
+            <Size unit="Byte">1000</Size>
             <StartingTime unit="ns">0</StartingTime>
             <EndToEnd unit="ns">200000</EndToEnd>
-            <SenderID>3</SenderID>
+            <SenderID>5</SenderID>
             <Paths>
                 <Receiver>
-                    <ReceiverID>5</ReceiverID>
-                    <Path>5;3;1</Path>
+                    <ReceiverID>3</ReceiverID>
+                    <Path>0;2;4</Path>
                 </Receiver>
             </Paths>
         </Frame>
@@ -100,14 +100,14 @@
             <FrameID>2</FrameID>
             <Period unit="ns">2000000</Period>
             <Deadline unit="ns">2000000</Deadline>
-            <Size unit="Byte">1500</Size>
+            <Size unit="Byte">1000</Size>
             <StartingTime unit="ns">0</StartingTime>
             <EndToEnd unit="ns">400000</EndToEnd>
-            <SenderID>3</SenderID>
+            <SenderID>5</SenderID>
             <Paths>
                 <Receiver>
-                    <ReceiverID>5</ReceiverID>
-                    <Path>5;3;1</Path>
+                    <ReceiverID>3</ReceiverID>
+                    <Path>0;2;4</Path>
                 </Receiver>
             </Paths>
         </Frame>
@@ -115,14 +115,14 @@
             <FrameID>3</FrameID>
             <Period unit="ns">2000000</Period>
             <Deadline unit="ns">2000000</Deadline>
-            <Size unit="Byte">1500</Size>
+            <Size unit="Byte">1000</Size>
             <StartingTime unit="ns">0</StartingTime>
             <EndToEnd unit="ns">400000</EndToEnd>
-            <SenderID>3</SenderID>
+            <SenderID>5</SenderID>
             <Paths>
                 <Receiver>
-                    <ReceiverID>5</ReceiverID>
-                    <Path>5;3;1</Path>
+                    <ReceiverID>3</ReceiverID>
+                    <Path>0;2;4</Path>
                 </Receiver>
             </Paths>
         </Frame>
@@ -130,14 +130,14 @@
             <FrameID>4</FrameID>
             <Period unit="ns">2000000</Period>
             <Deadline unit="ns">2000000</Deadline>
-            <Size unit="Byte">1500</Size>
+            <Size unit="Byte">1000</Size>
             <StartingTime unit="ns">0</StartingTime>
             <EndToEnd unit="ns">400000</EndToEnd>
-            <SenderID>5</SenderID>
+            <SenderID>3</SenderID>
             <Paths>
                 <Receiver>
-                    <ReceiverID>3</ReceiverID>
-                    <Path>0;2;4</Path>
+                    <ReceiverID>5</ReceiverID>
+                    <Path>5;3;1</Path>
                 </Receiver>
             </Paths>
         </Frame>
@@ -145,22 +145,7 @@
             <FrameID>5</FrameID>
             <Period unit="ns">4000000</Period>
             <Deadline unit="ns">4000000</Deadline>
-            <Size unit="Byte">1500</Size>
-            <StartingTime unit="ns">0</StartingTime>
-            <EndToEnd unit="ns">800000</EndToEnd>
-            <SenderID>5</SenderID>
-            <Paths>
-                <Receiver>
-                    <ReceiverID>3</ReceiverID>
-                    <Path>0;2;4</Path>
-                </Receiver>
-            </Paths>
-        </Frame>
-        <Frame>
-            <FrameID>6</FrameID>
-            <Period unit="ns">4000000</Period>
-            <Deadline unit="ns">4000000</Deadline>
-            <Size unit="Byte">1500</Size>
+            <Size unit="Byte">1000</Size>
             <StartingTime unit="ns">0</StartingTime>
             <EndToEnd unit="ns">800000</EndToEnd>
             <SenderID>3</SenderID>
@@ -172,10 +157,25 @@
             </Paths>
         </Frame>
         <Frame>
+            <FrameID>6</FrameID>
+            <Period unit="ns">4000000</Period>
+            <Deadline unit="ns">4000000</Deadline>
+            <Size unit="Byte">1000</Size>
+            <StartingTime unit="ns">0</StartingTime>
+            <EndToEnd unit="ns">800000</EndToEnd>
+            <SenderID>5</SenderID>
+            <Paths>
+                <Receiver>
+                    <ReceiverID>3</ReceiverID>
+                    <Path>0;2;4</Path>
+                </Receiver>
+            </Paths>
+        </Frame>
+        <Frame>
             <FrameID>7</FrameID>
             <Period unit="ns">4000000</Period>
             <Deadline unit="ns">4000000</Deadline>
-            <Size unit="Byte">1500</Size>
+            <Size unit="Byte">1000</Size>
             <StartingTime unit="ns">0</StartingTime>
             <EndToEnd unit="ns">800000</EndToEnd>
             <SenderID>5</SenderID>
@@ -190,14 +190,14 @@
             <FrameID>8</FrameID>
             <Period unit="ns">4000000</Period>
             <Deadline unit="ns">4000000</Deadline>
-            <Size unit="Byte">1500</Size>
+            <Size unit="Byte">1000</Size>
             <StartingTime unit="ns">0</StartingTime>
             <EndToEnd unit="ns">800000</EndToEnd>
-            <SenderID>5</SenderID>
+            <SenderID>3</SenderID>
             <Paths>
                 <Receiver>
-                    <ReceiverID>3</ReceiverID>
-                    <Path>0;2;4</Path>
+                    <ReceiverID>5</ReceiverID>
+                    <Path>5;3;1</Path>
                 </Receiver>
             </Paths>
         </Frame>
@@ -205,7 +205,7 @@
             <FrameID>9</FrameID>
             <Period unit="ns">4000000</Period>
             <Deadline unit="ns">4000000</Deadline>
-            <Size unit="Byte">1500</Size>
+            <Size unit="Byte">1000</Size>
             <StartingTime unit="ns">0</StartingTime>
             <EndToEnd unit="ns">800000</EndToEnd>
             <SenderID>5</SenderID>

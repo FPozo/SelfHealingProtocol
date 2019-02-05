@@ -45,6 +45,7 @@ typedef struct Switch_Information {
 typedef struct SelfHealing_Protocol {
     long long int period;       // Period of the protocol bandwidth reservation
     long long int time;         // Time of the protocol bandwidth reservation
+    Frame reservation;         // Frame that simulates the bandwidth reservation of the protocol
 }SelfHealing_Protocol;
 
 /**
@@ -52,7 +53,6 @@ typedef struct SelfHealing_Protocol {
  */
 typedef struct Connection_Topology {
     int node_id;                            // ID of the node
-    // Node *node_pt;                          // Pointer to the node (we not used for now, implement if needed)
     int link_id;                            // ID of the link
     Link *link_pt;                          // Pointer to the link
 }Connection_Topology;
@@ -63,6 +63,7 @@ typedef struct Connection_Topology {
 typedef struct Node_Topology {
     int node_id;                            // ID of the node
     Node *node_pt;                          // Pointer to the node
+    int num_connection;                     // Number of connections of the node
     Connection_Topology *connections_pt;    // List of connections of the node
 }Node_Topology;
 
@@ -74,7 +75,6 @@ typedef struct Traffic {
     int num_frames;                     // Number of frames in the network
     Frame *frames;                      // List of all frames and its information
     int *frames_id;                     // List of all frames ids correlated to the list of Frame struct
-    int *frames_hash;                   // Hash to find a frame by id and accelerate searches
 }Traffic;
 
                                                     /* CODE DEFINITIONS */
@@ -113,6 +113,16 @@ int set_switch_information(long long int min_time);
  @return -1 if something went wrong
  */
 int set_healing_protocol(long long int period, long long int time);
+
+/* Functions */
+
+/**
+ After reading a network it prepares all the needed variables to be ready to be scheduled.
+ This includes allocating offsets, calculating timeslot length, and population needed global variables
+
+ @return 0 if done correctly, -1 otherwise
+ */
+int prepare_network(void);
 
 /* Input Functions */
 
