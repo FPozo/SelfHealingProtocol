@@ -164,6 +164,38 @@ SelfHealing_Protocol * get_healing_protocol(void) {
     return &healing_prot;
 }
 
+/**
+ Get the frame id by the position of the frame in the traffic
+ */
+int get_frame_id(int pos) {
+    
+    return traffic.frames_id[pos];
+}
+
+/**
+ Get the traffic of the network
+ */
+Traffic * get_traffic(void) {
+    
+    return &traffic;
+}
+
+/**
+ Get the higher link id of the network
+ */
+int get_higher_link_id(void) {
+    
+    return higher_link_id;
+}
+
+/**
+ Get the hyperperiod of the network
+ */
+long long int get_hyperperiod(void) {
+    
+    return hyperperiod;
+}
+
 /* Setters */
 
 /**
@@ -278,7 +310,7 @@ int prepare_network(void) {
     // Adjust the timeslot to the maximum size possible (1 nanoseconds is the minimum)
     for (int i = 0; i < traffic.num_frames; i++) {
         for (int j = 0; j < traffic.frames[i].num_offsets; j++) {
-            int link_id = get_link_id_offset(&traffic.frames[i], j);
+            int link_id = get_link_id_offset_it(&traffic.frames[i], j);
             int time_frame = (get_size(&traffic.frames[i]) * 1000) / get_speed(link_accelerator[link_id]);
             // Do not allow the time frame to be less than 1ns, force a minimum of 1ns
             if (time_frame == 0) {
@@ -292,13 +324,14 @@ int prepare_network(void) {
         }
     }
     // Once we have the minimum possible timeslot, we normalize the values and save it (makes the scheduler faster)
+    hyperperiod /= size_timeslot;
     for (int i = 0; i < traffic.num_frames; i++) {
         set_period(&traffic.frames[i], get_period(&traffic.frames[i]) / size_timeslot);
         set_deadline(&traffic.frames[i], get_deadline(&traffic.frames[i]) / size_timeslot);
         set_starting_time(&traffic.frames[i], get_starting_time(&traffic.frames[i]) / size_timeslot);
         set_end_to_end(&traffic.frames[i], get_end_to_end(&traffic.frames[i]) / size_timeslot);
         for (int j = 0; j < traffic.frames[i].num_offsets; j++) {
-            int link_id = get_link_id_offset(&traffic.frames[i], j);
+            int link_id = get_link_id_offset_it(&traffic.frames[i], j);
             int time_frame = (get_size(&traffic.frames[i]) * 1000) / get_speed(link_accelerator[link_id]);
             time_frame = time_frame / size_timeslot;
             set_time_offset_it(&traffic.frames[i], j, time_frame);
@@ -310,6 +343,8 @@ int prepare_network(void) {
         set_deadline(&healing_prot.reservation, get_deadline(&healing_prot.reservation) / size_timeslot);
         set_starting_time(&healing_prot.reservation, get_starting_time(&healing_prot.reservation) / size_timeslot);
         set_end_to_end(&healing_prot.reservation, get_end_to_end(&healing_prot.reservation) / size_timeslot);
+        healing_prot.period /= size_timeslot;
+        healing_prot.time /= size_timeslot;
         for (int j = 0; j < healing_prot.reservation.num_offsets; j++) {
             int time_frame = get_size(&healing_prot.reservation) / size_timeslot;
             set_time_offset_it(&healing_prot.reservation, j, time_frame);
@@ -1175,5 +1210,180 @@ int read_network_xml(char *network_file) {
     }
     
     xmlFreeDoc(top_xml);
+    return 0;
+}
+
+/* Output Functions */
+
+/**
+ Write the Self-Healing Protocol information
+
+ @param root_xml pointer to the root of the Self-Healing Protocol
+ @return 0 if done correctly, -1 otherwise
+ */
+int write_healing_protocol_xml(xmlNode *root_xml) {
+    
+    char char_value[100];
+    
+    sprintf(char_value, "%lld", healing_prot.period);
+    xmlNewChild(root_xml, NULL, BAD_CAST "Period", BAD_CAST char_value);
+    
+    sprintf(char_value, "%lld", healing_prot.time);
+    xmlNewChild(root_xml, NULL, BAD_CAST "Time", BAD_CAST char_value);
+    
+    return 0;
+}
+
+/**
+ Write general and important information of the schedule
+
+ @param root_xml pointer to the node where to write the information
+ @return 0 if done correctly, -1 otherwise
+ */
+int write_general_information_xml(xmlNode *root_xml) {
+    
+    char char_value[100];
+    xmlNode *slot_xml;
+    
+    sprintf(char_value, "%d", size_timeslot);
+    slot_xml = xmlNewChild(root_xml, NULL, BAD_CAST "TimeslotSize", BAD_CAST char_value);
+    xmlNewProp(slot_xml, BAD_CAST "unit", BAD_CAST "ns");
+    
+    sprintf(char_value, "%lld", hyperperiod);
+    xmlNewChild(root_xml, NULL, BAD_CAST "HyperPeriod", BAD_CAST char_value);
+    
+    // Write the self healing protocol if exists
+    if (healing_prot.period != 0) {
+        write_healing_protocol_xml(xmlNewChild(root_xml, NULL, BAD_CAST "SelfHealingProtocol", NULL));
+    }
+    
+    sprintf(char_value, "%d", number_links);
+    xmlNewChild(root_xml, NULL, BAD_CAST "NumberLinks", BAD_CAST char_value);
+    
+    sprintf(char_value, "%d", number_nodes);
+    xmlNewChild(root_xml, NULL, BAD_CAST "NumberNodes", BAD_CAST char_value);
+    
+    sprintf(char_value, "%d", traffic.num_frames);
+    xmlNewChild(root_xml, NULL, BAD_CAST "NumberFrames", BAD_CAST char_value);
+    
+    return 0;
+}
+
+/**
+ Write the information and transmission time of a frame
+
+ @param root_xml pointer to the root of the frame
+ @param pt pointer to the frame
+ @param frame_id identifier of the frame
+ @return 0 if done correctly, -1 otherwise
+ */
+int write_frame_xml(xmlNode *root_xml, Frame *pt, int frame_id) {
+    
+    char char_value[100];
+    xmlNode *path_xml, *link_xml, *inst_xml, *repl_xml;
+    
+    if (pt == NULL) {
+        fprintf(stderr, "The given pointer to the frame is NULL\n");
+        return -1;
+    }
+    
+    // Write the general information of the frame
+    sprintf(char_value, "%d", frame_id);
+    xmlNewChild(root_xml, NULL, BAD_CAST "FrameID", BAD_CAST char_value);
+    
+    sprintf(char_value, "%lld", pt->period);
+    xmlNewChild(root_xml, NULL, BAD_CAST "Period", BAD_CAST char_value);
+    
+    sprintf(char_value, "%lld", pt->deadline);
+    xmlNewChild(root_xml, NULL, BAD_CAST "Deadline", BAD_CAST char_value);
+    
+    sprintf(char_value, "%d", pt->size);
+    xmlNewChild(root_xml, NULL, BAD_CAST "Size", BAD_CAST char_value);
+    
+    sprintf(char_value, "%lld", pt->starting);
+    xmlNewChild(root_xml, NULL, BAD_CAST "StartingTime", BAD_CAST char_value);
+    
+    sprintf(char_value, "%lld", pt->end_to_end_delay);
+    xmlNewChild(root_xml, NULL, BAD_CAST "EndToEndDelay", BAD_CAST char_value);
+    
+    // Write the transmission times of all the paths of the frame
+    for (int i = 0; i < pt->num_paths; i++) {
+        path_xml = xmlNewChild(root_xml, NULL, BAD_CAST "Path", NULL);
+        
+        sprintf(char_value, "%d", i);
+        xmlNewChild(path_xml, NULL, BAD_CAST "PathNum", BAD_CAST char_value);
+        
+        // For every link in the path, write the transmission times
+        for (int j = 0; j < pt->list_paths[i].length_path; j++) {
+            link_xml = xmlNewChild(path_xml, NULL, BAD_CAST "Link", NULL);
+            
+            Offset *off_pt = pt->list_paths[i].list_offsets[j];
+            
+            sprintf(char_value, "%d", off_pt->link_id);
+            xmlNewChild(link_xml, NULL, BAD_CAST "LinkID", BAD_CAST char_value);
+            
+            // For every offset, write the transmission times of all instances and replicas
+            for (int h = 0; h < off_pt->num_instances; h++) {
+                inst_xml = xmlNewChild(link_xml, NULL, BAD_CAST "Instance", NULL);
+                
+                sprintf(char_value, "%d", h);
+                xmlNewChild(inst_xml, NULL, BAD_CAST "NumInstance", BAD_CAST char_value);
+                
+                sprintf(char_value, "%lld", off_pt->offset[h][0]);
+                xmlNewChild(inst_xml, NULL, BAD_CAST "TransmissionTime", BAD_CAST char_value);
+                
+                sprintf(char_value, "%lld", off_pt->offset[h][0] + off_pt->time - 1);
+                xmlNewChild(inst_xml, NULL, BAD_CAST "EndingTime", BAD_CAST char_value);
+                
+                for (int k = 1; k < off_pt->num_replicas; k++) {
+                    repl_xml = xmlNewChild(inst_xml, NULL, BAD_CAST "Replica", NULL);
+                    
+                    sprintf(char_value, "%d", k);
+                    xmlNewChild(repl_xml, NULL, BAD_CAST "NumReplica", BAD_CAST char_value);
+                    
+                    sprintf(char_value, "%lld", off_pt->offset[h][k]);
+                    xmlNewChild(repl_xml, NULL, BAD_CAST "TransmissionTime", BAD_CAST char_value);
+                    
+                    sprintf(char_value, "%lld", off_pt->offset[h][k] + off_pt->time - 1);
+                    xmlNewChild(repl_xml, NULL, BAD_CAST "EndingTime", BAD_CAST char_value);
+                }
+            }
+        }
+    }
+    
+    return 0;
+}
+
+/**
+ Write the obtained schedule from all frames into a xml file.
+ Start with the general information, such as hyper-period or size of the time slot, then write all the transmission
+ times of all frames
+ */
+int write_schedule_xml(char *schedule_file) {
+    
+    // Init xml variables needed to write information in the file
+    xmlDoc *top_xml;
+    xmlNode *root_xml, *traffic_xml;
+    
+    // Create the top fail
+    top_xml = xmlNewDoc(BAD_CAST "1.0");
+    root_xml = xmlNewNode(NULL, BAD_CAST "Schedule");
+    xmlDocSetRootElement(top_xml, root_xml);
+    
+    // Write general information
+    write_general_information_xml(xmlNewChild(root_xml, NULL, BAD_CAST "GeneralInformation", NULL));
+    
+    // Write all frames information and transmission times
+    traffic_xml = xmlNewChild(root_xml, NULL, BAD_CAST "TrafficInformation", NULL);
+    for (int i = 0; i < traffic.num_frames; i++) {
+        write_frame_xml(xmlNewChild(traffic_xml, NULL, BAD_CAST "Frame", NULL),
+                        &traffic.frames[i], traffic.frames_id[i]);
+    }
+    
+    // Write the file and clean up the variables
+    xmlSaveFormatFileEnc(schedule_file, top_xml, "UTF-8", 1);
+    xmlFreeDoc(top_xml);
+    xmlCleanupParser();
+    
     return 0;
 }

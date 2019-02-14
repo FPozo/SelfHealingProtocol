@@ -95,6 +95,35 @@ long long int get_switch_min_time(void);
  */
 SelfHealing_Protocol * get_healing_protocol(void);
 
+/**
+ Get the frame id by the position of the frame in the traffic
+
+ @param pos position of the frame
+ @return frame id
+ */
+int get_frame_id(int pos);
+
+/**
+ Get the traffic of the network
+
+ @return traffic of the network
+ */
+Traffic * get_traffic(void);
+
+/**
+ Get the higher link id of the network
+
+ @return higher link id of the network
+ */
+int get_higher_link_id(void);
+
+/**
+ Get the hyperperiod of the network
+
+ @return hyperperiod of the network
+ */
+long long int get_hyperperiod(void);
+
 /* Setters */
 
 /**
@@ -133,3 +162,15 @@ int prepare_network(void);
  @return 0 if correct, -1 otherwise
  */
 int read_network_xml(char *network_file);
+
+/* Output Functions */
+
+/**
+ Write the obtained schedule from all frames into a xml file.
+ Start with the general information, such as hyper-period or size of the time slot, then write all the transmission
+ times of all frames
+
+ @param schedule_file name and path of the schedule xml file
+ @return 0 if correct, -1 otherwise
+ */
+int write_schedule_xml(char *schedule_file);

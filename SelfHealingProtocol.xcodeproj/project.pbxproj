@@ -11,6 +11,9 @@
 		604ED62F22004B5D003F527C /* Link.c in Sources */ = {isa = PBXBuildFile; fileRef = 604ED62E22004B5D003F527C /* Link.c */; };
 		604ED63222004FED003F527C /* Node.c in Sources */ = {isa = PBXBuildFile; fileRef = 604ED63122004FED003F527C /* Node.c */; };
 		604ED635220094D8003F527C /* Frame.c in Sources */ = {isa = PBXBuildFile; fileRef = 604ED634220094D8003F527C /* Frame.c */; };
+		60504363220B1B4400C8C349 /* libgurobi81.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 60504362220B1B4400C8C349 /* libgurobi81.dylib */; };
+		60504365220B1BB700C8C349 /* libgurobi_g++4.2.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 60504364220B1BB700C8C349 /* libgurobi_g++4.2.a */; };
+		60504368220C350F00C8C349 /* Scheduler.c in Sources */ = {isa = PBXBuildFile; fileRef = 60504367220C350F00C8C349 /* Scheduler.c */; };
 		6085E51B21A40F0C00F13E7B /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 6085E51A21A40F0C00F13E7B /* main.c */; };
 /* End PBXBuildFile section */
 
@@ -35,6 +38,10 @@
 		604ED63122004FED003F527C /* Node.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = Node.c; sourceTree = "<group>"; };
 		604ED633220094D8003F527C /* Frame.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Frame.h; sourceTree = "<group>"; };
 		604ED634220094D8003F527C /* Frame.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = Frame.c; sourceTree = "<group>"; };
+		60504362220B1B4400C8C349 /* libgurobi81.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libgurobi81.dylib; path = ../../../../../../Library/gurobi810/mac64/lib/libgurobi81.dylib; sourceTree = "<group>"; };
+		60504364220B1BB700C8C349 /* libgurobi_g++4.2.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libgurobi_g++4.2.a"; path = "../../../../../../Library/gurobi810/mac64/lib/libgurobi_g++4.2.a"; sourceTree = "<group>"; };
+		60504366220C350F00C8C349 /* Scheduler.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Scheduler.h; sourceTree = "<group>"; };
+		60504367220C350F00C8C349 /* Scheduler.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = Scheduler.c; sourceTree = "<group>"; };
 		606ED9B321D237560081802B /* NetworkGenerator */ = {isa = PBXFileReference; lastKnownFileType = folder; path = NetworkGenerator; sourceTree = "<group>"; };
 		606ED9B821F777910081802B /* Files */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Files; sourceTree = "<group>"; };
 		6085E51721A40F0C00F13E7B /* SelfHealingProtocol */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = SelfHealingProtocol; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -49,6 +56,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				60504365220B1BB700C8C349 /* libgurobi_g++4.2.a in Frameworks */,
+				60504363220B1B4400C8C349 /* libgurobi81.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -66,8 +75,19 @@
 				604ED63122004FED003F527C /* Node.c */,
 				604ED633220094D8003F527C /* Frame.h */,
 				604ED634220094D8003F527C /* Frame.c */,
+				60504366220C350F00C8C349 /* Scheduler.h */,
+				60504367220C350F00C8C349 /* Scheduler.c */,
 			);
 			path = Scheduler;
+			sourceTree = "<group>";
+		};
+		60504361220B1B4400C8C349 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				60504364220B1BB700C8C349 /* libgurobi_g++4.2.a */,
+				60504362220B1B4400C8C349 /* libgurobi81.dylib */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 		6085E50E21A40F0C00F13E7B = {
@@ -75,6 +95,7 @@
 			children = (
 				6085E51921A40F0C00F13E7B /* SelfHealingProtocol */,
 				6085E51821A40F0C00F13E7B /* Products */,
+				60504361220B1B4400C8C349 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -189,6 +210,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				604ED62C21FF31A5003F527C /* Network.c in Sources */,
+				60504368220C350F00C8C349 /* Scheduler.c in Sources */,
 				604ED63222004FED003F527C /* Node.c in Sources */,
 				6085E51B21A40F0C00F13E7B /* main.c in Sources */,
 				604ED635220094D8003F527C /* Frame.c in Sources */,
@@ -315,7 +337,14 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = H6335V3A36;
-				HEADER_SEARCH_PATHS = /usr/include/libxml2;
+				HEADER_SEARCH_PATHS = (
+					/usr/include/libxml2,
+					/Library/gurobi810/mac64/include,
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(LOCAL_LIBRARY_DIR)/gurobi810/mac64/lib",
+				);
 				OTHER_LDFLAGS = "-lxml2";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -326,7 +355,14 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = H6335V3A36;
-				HEADER_SEARCH_PATHS = /usr/include/libxml2;
+				HEADER_SEARCH_PATHS = (
+					/usr/include/libxml2,
+					/Library/gurobi810/mac64/include,
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(LOCAL_LIBRARY_DIR)/gurobi810/mac64/lib",
+				);
 				OTHER_LDFLAGS = "-lxml2";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};

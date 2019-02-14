@@ -25,6 +25,8 @@
 
 typedef struct Offset {
     long long int **offset;             // Matrix with the transmission times in ns
+    int **var_num;                      // Variable number for the gurobi solver
+    char **var_name;                    // Variable name for the gurobi solver
     int num_instances;                  // Number of offset instances (hyperperiod / period frame)
     int num_replicas;                   // Number of offset replicas due to wireless (1 => no replication)
     int time;                           // Number of timeslots to transmit in the current link
@@ -136,7 +138,103 @@ int get_num_offsets(Frame *pt);
  @param offset_it position in the offset iteration
  @return link id, -1 if something was wrong
  */
-int get_link_id_offset(Frame *pt, int offset_it);
+int get_link_id_offset_it(Frame *pt, int offset_it);
+
+/**
+ Get the offset for a given offset it
+
+ @param pt pointer to the frame
+ @param offset_it posiition in the offset iteration
+ @return offset pointer
+ */
+Offset *get_offset_it(Frame *pt, int offset_it);
+
+/**
+ Get the number of instances for the offset
+ 
+ @param pt pointer to the offset
+ @return number of instances
+ */
+int get_off_num_instances(Offset *pt);
+
+/**
+ Get the number of replicas for the offset
+ 
+ @param pt pointer to the offset
+ @return number of replicas
+ */
+int get_off_num_replicas(Offset *pt);
+
+/**
+ Get the time to transmit the offset in the specific link
+
+ @param pt pointer to the offset
+ @return time to transmited the offset in the specific link
+ */
+int get_off_time(Offset *pt);
+
+/**
+ Get the number of paths of the frame
+
+ @param pt pointer to the frame
+ @return number of paths of the frame
+ */
+int get_num_paths(Frame *pt);
+
+/**
+ Get the path for the given number of receiver
+
+ @param pt pointer to the frame
+ @param num number of receiver
+ @return path for the given number of receiver
+ */
+Path *get_path(Frame *pt, int num);
+
+/**
+ Get the gurobi var name
+ 
+ @param pt pointer to the offset
+ @param instance number of instance
+ @param replica number of replica
+ @return the var name
+ */
+int get_var_name(Offset *pt, int instance, int replica);
+
+/**
+ Get the transmission time of the given offset, instance and replica
+
+ @param pt pointer to the offset
+ @param instance number of instance
+ @param replica number of replica
+ @return transmission time requested
+ */
+long long int get_trans_time(Offset *pt, int instance, int replica);
+
+/**
+ Get the number of paths in a link
+
+ @param pt pointer to the path
+ @return number of paths in a link
+ */
+int get_num_links_path(Path *pt);
+
+/**
+ For the given path and position of the link in the path, get the offset
+
+ @param pt pointer to the path
+ @param num position of the link in the path
+ @return pointer to the Offset
+ */
+Offset *get_offset_path_link(Path *pt, int num);
+
+/**
+ By the given offset, return the offset if exists, or null if it does not
+
+ @param pt pointer to the frame
+ @param link_id link id
+ @return pointer to the offset if the frame has an offset with that link
+ */
+Offset *get_offset_by_link(Frame *pt, int link_id);
 
 /* Setters */
 
@@ -224,6 +322,28 @@ int set_path_receiver_id(Frame *pt, int receiver_id, int *path, int len);
  @return 0 if done correctly, -1 otherwise
  */
 int set_time_offset_it(Frame *pt, int offset_it, int time);
+
+/**
+ Set the gurobi var name
+
+ @param pt pointer to the offset
+ @param instance number of instance
+ @param replica number of replica
+ @param name integer pointer to the gurobi variable
+ @return 0 if done correctly, -1 otherwise
+ */
+int set_var_name(Offset *pt, int instance, int replica, int name);
+
+/**
+ Set the transmission time of an offset
+
+ @param pt pointer to the offset
+ @param instance number of instance
+ @param replica number of replica
+ @param time transmission time to set into the offset
+ @return 0 if done correctly, -1 otherwise
+ */
+int set_trans_time(Offset *pt, int instance, int replica, long long int time);
 
 /* Functions */
 

@@ -117,7 +117,7 @@ int get_num_offsets(Frame *pt) {
 /**
  Get the link id of the frame by the offset iteration
  */
-int get_link_id_offset(Frame *pt, int offset_it) {
+int get_link_id_offset_it(Frame *pt, int offset_it) {
     
     if (pt == NULL) {
         fprintf(stderr, "The given pointer is NULL\n");
@@ -130,6 +130,177 @@ int get_link_id_offset(Frame *pt, int offset_it) {
     
     return pt->offset_it[offset_it]->link_id;
     
+}
+
+/**
+ Get the number of instances for the offset
+ */
+int get_off_num_instances(Offset *pt) {
+    
+    if (pt == NULL) {
+        fprintf(stderr, "The given offset pointer is NULL\n");
+        return -1;
+        
+    }
+    
+    return pt->num_instances;
+}
+
+/**
+ Get the number of replicas for the offset
+ */
+int get_off_num_replicas(Offset *pt) {
+    
+    if (pt == NULL) {
+        fprintf(stderr, "The given offset pointer is NULL\n");
+        return -1;
+        
+    }
+    
+    return pt->num_replicas;
+}
+
+/**
+ Get the time to transmit the offset in the specific link
+ */
+int get_off_time(Offset *pt) {
+    
+    if (pt == NULL) {
+        fprintf(stderr, "The given offset pointer is NULL\n");
+        return -1;
+        
+    }
+    
+    return pt->time;
+}
+
+/**
+ Get the number of paths of the frame
+ */
+int get_num_paths(Frame *pt) {
+    
+    if (pt == NULL) {
+        fprintf(stderr, "The given pointer is NULL\n");
+        return -1;
+    }
+    
+    return pt->num_paths;
+}
+
+/**
+ Get the path for the given number of receiver
+ */
+Path *get_path(Frame *pt, int num) {
+    
+    if (pt == NULL) {
+        fprintf(stderr, "The given pointer is NULL\n");
+        return NULL;
+    }
+    
+    return &pt->list_paths[num];
+}
+
+/**
+ Get the offset for a given offset it
+ */
+Offset *get_offset_it(Frame *pt, int offset_it) {
+    
+    if (pt == NULL) {
+        fprintf(stderr, "The given pointer is NULL\n");
+        return NULL;
+    }
+    if (offset_it < 0 || offset_it >= pt->num_offsets) {
+        fprintf(stderr, "The given offset iterator number is out of the bounds\n");
+        return NULL;
+    }
+    
+    return pt->offset_it[offset_it];
+}
+
+/**
+ Get the gurobi var name
+ */
+int get_var_name(Offset *pt, int instance, int replica) {
+    
+    if (pt == NULL) {
+        fprintf(stderr, "The given offset pointer is NULL\n");
+        return -1;
+    }
+    if (instance >= pt->num_instances || instance < 0) {
+        fprintf(stderr, "The given instance is outside the range of instances\n");
+        return -1;
+    }
+    if (replica >= pt->num_replicas || replica < 0) {
+        fprintf(stderr, "The given replica is outside the range of instances\n");
+        return -1;
+    }
+    
+    return pt->var_num[instance][replica];
+}
+
+/**
+ Get the transmission time of the given offset, instance and replica
+ */
+long long int get_trans_time(Offset *pt, int instance, int replica) {
+    
+    if (pt == NULL) {
+        fprintf(stderr, "The given offset pointer is NULL\n");
+        return -1;
+    }
+    if (instance >= pt->num_instances || instance < 0) {
+        fprintf(stderr, "The given instance is outside the range of instances\n");
+        return -1;
+    }
+    if (replica >= pt->num_replicas || replica < 0) {
+        fprintf(stderr, "The given replica is outside the range of instances\n");
+        return -1;
+    }
+    
+    return pt->offset[instance][replica];
+}
+
+/**
+ Get the number of paths in a link
+ */
+int get_num_links_path(Path *pt) {
+    
+    if (pt == NULL) {
+        fprintf(stderr, "The given path pointer is NULL\n");
+        return -1;
+    }
+    
+    return pt->length_path;
+}
+
+/**
+ For the given path and position of the link in the path, get the offset
+ */
+Offset *get_offset_path_link(Path *pt, int num) {
+    
+    if (pt == NULL) {
+        fprintf(stderr, "The given path pointer is NULL\n");
+        return NULL;
+    }
+    if (num >= pt->length_path) {
+        fprintf(stderr, "The given position of the link is larger than the path\n");
+        return NULL;
+    }
+    
+    return pt->list_offsets[num];
+    
+}
+
+/**
+ By the given offset, return the offset if exists, or null if it does not
+ */
+Offset *get_offset_by_link(Frame *pt, int link_id) {
+    
+    if (pt == NULL) {
+        fprintf(stderr, "The given frame pointer is NULL\n");
+        return NULL;
+    }
+    
+    return pt->offset_hash[link_id];
 }
 
 /* Setters */
@@ -334,6 +505,50 @@ int set_time_offset_it(Frame *pt, int offset_it, int time) {
     return 0;
 }
 
+/**
+ Set the gurobi var name
+ */
+int set_var_name(Offset *pt, int instance, int replica, int name) {
+    
+    if (pt == NULL) {
+        fprintf(stderr, "The given offset pointer is NULL\n");
+        return -1;
+    }
+    if (instance >= pt->num_instances || instance < 0) {
+        fprintf(stderr, "The given instance is outside the range of instances\n");
+        return -1;
+    }
+    if (replica >= pt->num_replicas || replica < 0) {
+        fprintf(stderr, "The given replica is outside the range of instances\n");
+        return -1;
+    }
+
+    pt->var_num[instance][replica] = name;
+    return 0;
+}
+
+/**
+ Set the transmission time of an offset
+ */
+int set_trans_time(Offset *pt, int instance, int replica, long long int time) {
+    
+    if (pt == NULL) {
+        fprintf(stderr, "The given offset pointer is NULL\n");
+        return -1;
+    }
+    if (instance >= pt->num_instances || instance < 0) {
+        fprintf(stderr, "The given instance is outside the range of instances\n");
+        return -1;
+    }
+    if (replica >= pt->num_replicas || replica < 0) {
+        fprintf(stderr, "The given replica is outside the range of instances\n");
+        return -1;
+    }
+    
+    pt->offset[instance][replica] = time;
+    return 0;
+}
+
 /* Functions */
 
 /**
@@ -373,11 +588,15 @@ int init_offsets(Frame *pt, int max_link_id, long long int hyperperiod) {
                 // Allocate also the transmission times matrix and set to undifined
                 pt->offset_hash[link_id]->offset = malloc(sizeof(long long int*) *
                                                           pt->offset_hash[link_id]->num_instances);
+                pt->offset_hash[link_id]->var_num = malloc(sizeof(int*) * pt->offset_hash[link_id]->num_instances);
                 for (int inst = 0; inst < pt->offset_hash[link_id]->num_instances; inst++) {
                     pt->offset_hash[link_id]->offset[inst] = malloc(sizeof(long long int) *
                                                                     pt->offset_hash[link_id]->num_replicas);
+                    pt->offset_hash[link_id]->var_num[inst] = malloc(sizeof(int) *
+                                                                     pt->offset_hash[link_id]->num_replicas);
                     for (int repl = 0; repl < pt->offset_hash[link_id]->num_replicas; repl++) {
                         pt->offset_hash[link_id]->offset[inst][repl] = -1;
+                        pt->offset_hash[link_id]->var_num[inst][repl] = -1;
                     }
                 }
                 
@@ -424,9 +643,12 @@ int init_offset_reservation(Frame *pt, int max_link_id, long long int hyperperio
         
         // Allocate the transmission times and already set them as we know them
         pt->offset_hash[i]->offset = malloc(sizeof(long long int*) * instances);
+        pt->offset_hash[i]->var_num = malloc(sizeof(int*) * instances);
         for (int inst = 0; inst < instances; inst++) {
             pt->offset_hash[i]->offset[inst] = malloc(sizeof(long long int));
+            pt->offset_hash[i]->var_num[inst] = malloc(sizeof(int) * instances);
             pt->offset_hash[i]->offset[inst][0] = pt->period * inst;
+            pt->offset_hash[i]->offset[inst][0] = -1;
         }
         
         // Add the offset to the offset iterator

@@ -68,15 +68,15 @@
         </TopologyInformation>
         <TrafficDescription method="generate">
             <TrafficInformation>
-                <NumberFrames>10</NumberFrames>
-                <NumberSingle>5</NumberSingle>
-                <NumberLocal>1</NumberLocal>
-                <NumberMulti>1</NumberMulti>
-                <NumberBroadcast>3</NumberBroadcast>
+                <NumberFrames>20</NumberFrames>
+                <NumberSingle>10</NumberSingle>
+                <NumberLocal>2</NumberLocal>
+                <NumberMulti>4</NumberMulti>
+                <NumberBroadcast>4</NumberBroadcast>
             </TrafficInformation>
             <FrameDescription>
                 <FrameType>
-                    <NumberFrames>2</NumberFrames>
+                    <NumberFrames>4</NumberFrames>
                     <Period unit="ms">1</Period>
                     <Deadline unit="ms">1</Deadline>
                     <Size unit="Byte">1000</Size>
@@ -84,7 +84,7 @@
                     <EndToEnd unit="us">200</EndToEnd>
                 </FrameType>
                 <FrameType>
-                    <NumberFrames>3</NumberFrames>
+                    <NumberFrames>6</NumberFrames>
                     <Period unit="ms">2</Period>
                     <Deadline unit="ms">2</Deadline>
                     <Size unit="Byte">1000</Size>
@@ -92,7 +92,7 @@
                     <EndToEnd unit="us">400</EndToEnd>
                 </FrameType>
                 <FrameType>
-                    <NumberFrames>5</NumberFrames>
+                    <NumberFrames>10</NumberFrames>
                     <Period unit="ms">4</Period>
                     <Deadline unit="ms">4</Deadline>
                     <Size unit="Byte">1000</Size>
