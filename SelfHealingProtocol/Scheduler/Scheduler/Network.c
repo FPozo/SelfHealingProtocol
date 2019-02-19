@@ -324,7 +324,12 @@ int prepare_network(void) {
         }
     }
     // Once we have the minimum possible timeslot, we normalize the values and save it (makes the scheduler faster)
-    hyperperiod /= size_timeslot;
+    if (size_timeslot == 0) {
+        fprintf(stderr, "For some reason the size of the time slot is 0, this cannot happen\n");
+        return -1;
+    } else {
+        hyperperiod /= size_timeslot;
+    }
     for (int i = 0; i < traffic.num_frames; i++) {
         set_period(&traffic.frames[i], get_period(&traffic.frames[i]) / size_timeslot);
         set_deadline(&traffic.frames[i], get_deadline(&traffic.frames[i]) / size_timeslot);

@@ -9,7 +9,7 @@
     </SelfHealingProtocol>
     <NumberLinks>6</NumberLinks>
     <NumberNodes>4</NumberNodes>
-    <NumberFrames>20</NumberFrames>
+    <NumberFrames>10</NumberFrames>
   </GeneralInformation>
   <TrafficInformation>
     <Frame>
@@ -25,69 +25,69 @@
           <LinkID>5</LinkID>
           <Instance>
             <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>131</TransmissionTime>
+            <EndingTime>140</EndingTime>
           </Instance>
           <Instance>
             <NumInstance>1</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>1131</TransmissionTime>
+            <EndingTime>1140</EndingTime>
           </Instance>
           <Instance>
             <NumInstance>2</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>2290</TransmissionTime>
+            <EndingTime>2299</EndingTime>
           </Instance>
           <Instance>
             <NumInstance>3</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>3716</TransmissionTime>
+            <EndingTime>3725</EndingTime>
           </Instance>
         </Link>
         <Link>
           <LinkID>3</LinkID>
           <Instance>
             <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>226</TransmissionTime>
+            <EndingTime>235</EndingTime>
           </Instance>
           <Instance>
             <NumInstance>1</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>1226</TransmissionTime>
+            <EndingTime>1235</EndingTime>
           </Instance>
           <Instance>
             <NumInstance>2</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>2385</TransmissionTime>
+            <EndingTime>2394</EndingTime>
           </Instance>
           <Instance>
             <NumInstance>3</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>3811</TransmissionTime>
+            <EndingTime>3820</EndingTime>
           </Instance>
         </Link>
         <Link>
           <LinkID>1</LinkID>
           <Instance>
             <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>321</TransmissionTime>
+            <EndingTime>330</EndingTime>
           </Instance>
           <Instance>
             <NumInstance>1</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>1321</TransmissionTime>
+            <EndingTime>1330</EndingTime>
           </Instance>
           <Instance>
             <NumInstance>2</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>2480</TransmissionTime>
+            <EndingTime>2489</EndingTime>
           </Instance>
           <Instance>
             <NumInstance>3</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>3906</TransmissionTime>
+            <EndingTime>3915</EndingTime>
           </Instance>
         </Link>
       </Path>
@@ -105,229 +105,169 @@
           <LinkID>5</LinkID>
           <Instance>
             <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>716</TransmissionTime>
+            <EndingTime>725</EndingTime>
           </Instance>
           <Instance>
             <NumInstance>1</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>1585</TransmissionTime>
+            <EndingTime>1594</EndingTime>
           </Instance>
           <Instance>
             <NumInstance>2</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>2716</TransmissionTime>
+            <EndingTime>2725</EndingTime>
           </Instance>
           <Instance>
             <NumInstance>3</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>3131</TransmissionTime>
+            <EndingTime>3140</EndingTime>
           </Instance>
         </Link>
         <Link>
           <LinkID>3</LinkID>
           <Instance>
             <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>811</TransmissionTime>
+            <EndingTime>820</EndingTime>
           </Instance>
           <Instance>
             <NumInstance>1</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>1680</TransmissionTime>
+            <EndingTime>1689</EndingTime>
           </Instance>
           <Instance>
             <NumInstance>2</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>2811</TransmissionTime>
+            <EndingTime>2820</EndingTime>
           </Instance>
           <Instance>
             <NumInstance>3</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>3226</TransmissionTime>
+            <EndingTime>3235</EndingTime>
           </Instance>
         </Link>
         <Link>
           <LinkID>1</LinkID>
           <Instance>
             <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>906</TransmissionTime>
+            <EndingTime>915</EndingTime>
           </Instance>
           <Instance>
             <NumInstance>1</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>1775</TransmissionTime>
+            <EndingTime>1784</EndingTime>
           </Instance>
           <Instance>
             <NumInstance>2</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>2906</TransmissionTime>
+            <EndingTime>2915</EndingTime>
           </Instance>
           <Instance>
             <NumInstance>3</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>3321</TransmissionTime>
+            <EndingTime>3330</EndingTime>
           </Instance>
         </Link>
       </Path>
     </Frame>
     <Frame>
       <FrameID>2</FrameID>
-      <Period>1000</Period>
-      <Deadline>1000</Deadline>
+      <Period>2000</Period>
+      <Deadline>2000</Deadline>
       <Size>1000</Size>
       <StartingTime>0</StartingTime>
-      <EndToEndDelay>200</EndToEndDelay>
+      <EndToEndDelay>400</EndToEndDelay>
       <Path>
         <PathNum>0</PathNum>
         <Link>
           <LinkID>5</LinkID>
           <Instance>
             <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>272</TransmissionTime>
+            <EndingTime>281</EndingTime>
           </Instance>
           <Instance>
             <NumInstance>1</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-          <Instance>
-            <NumInstance>2</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-          <Instance>
-            <NumInstance>3</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>3272</TransmissionTime>
+            <EndingTime>3281</EndingTime>
           </Instance>
         </Link>
         <Link>
           <LinkID>3</LinkID>
           <Instance>
             <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>467</TransmissionTime>
+            <EndingTime>476</EndingTime>
           </Instance>
           <Instance>
             <NumInstance>1</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-          <Instance>
-            <NumInstance>2</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-          <Instance>
-            <NumInstance>3</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>3467</TransmissionTime>
+            <EndingTime>3476</EndingTime>
           </Instance>
         </Link>
         <Link>
           <LinkID>1</LinkID>
           <Instance>
             <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>662</TransmissionTime>
+            <EndingTime>671</EndingTime>
           </Instance>
           <Instance>
             <NumInstance>1</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-          <Instance>
-            <NumInstance>2</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-          <Instance>
-            <NumInstance>3</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>3662</TransmissionTime>
+            <EndingTime>3671</EndingTime>
           </Instance>
         </Link>
       </Path>
     </Frame>
     <Frame>
       <FrameID>3</FrameID>
-      <Period>1000</Period>
-      <Deadline>1000</Deadline>
+      <Period>2000</Period>
+      <Deadline>2000</Deadline>
       <Size>1000</Size>
       <StartingTime>0</StartingTime>
-      <EndToEndDelay>200</EndToEndDelay>
+      <EndToEndDelay>400</EndToEndDelay>
       <Path>
         <PathNum>0</PathNum>
         <Link>
           <LinkID>0</LinkID>
           <Instance>
             <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>1416</TransmissionTime>
+            <EndingTime>1425</EndingTime>
           </Instance>
           <Instance>
             <NumInstance>1</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-          <Instance>
-            <NumInstance>2</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-          <Instance>
-            <NumInstance>3</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>2232</TransmissionTime>
+            <EndingTime>2241</EndingTime>
           </Instance>
         </Link>
         <Link>
           <LinkID>2</LinkID>
           <Instance>
             <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>1611</TransmissionTime>
+            <EndingTime>1620</EndingTime>
           </Instance>
           <Instance>
             <NumInstance>1</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-          <Instance>
-            <NumInstance>2</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-          <Instance>
-            <NumInstance>3</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>2427</TransmissionTime>
+            <EndingTime>2436</EndingTime>
           </Instance>
         </Link>
         <Link>
           <LinkID>4</LinkID>
           <Instance>
             <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>1806</TransmissionTime>
+            <EndingTime>1815</EndingTime>
           </Instance>
           <Instance>
             <NumInstance>1</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-          <Instance>
-            <NumInstance>2</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-          <Instance>
-            <NumInstance>3</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>2622</TransmissionTime>
+            <EndingTime>2631</EndingTime>
           </Instance>
         </Link>
       </Path>
@@ -342,298 +282,188 @@
       <Path>
         <PathNum>0</PathNum>
         <Link>
-          <LinkID>5</LinkID>
+          <LinkID>0</LinkID>
           <Instance>
             <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>232</TransmissionTime>
+            <EndingTime>241</EndingTime>
           </Instance>
           <Instance>
             <NumInstance>1</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>3416</TransmissionTime>
+            <EndingTime>3425</EndingTime>
           </Instance>
         </Link>
         <Link>
-          <LinkID>3</LinkID>
+          <LinkID>2</LinkID>
           <Instance>
             <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>427</TransmissionTime>
+            <EndingTime>436</EndingTime>
           </Instance>
           <Instance>
             <NumInstance>1</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>3611</TransmissionTime>
+            <EndingTime>3620</EndingTime>
           </Instance>
         </Link>
         <Link>
-          <LinkID>1</LinkID>
+          <LinkID>4</LinkID>
           <Instance>
             <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>622</TransmissionTime>
+            <EndingTime>631</EndingTime>
           </Instance>
           <Instance>
             <NumInstance>1</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>3806</TransmissionTime>
+            <EndingTime>3815</EndingTime>
           </Instance>
         </Link>
       </Path>
     </Frame>
     <Frame>
       <FrameID>5</FrameID>
-      <Period>2000</Period>
-      <Deadline>2000</Deadline>
+      <Period>4000</Period>
+      <Deadline>4000</Deadline>
       <Size>1000</Size>
       <StartingTime>0</StartingTime>
-      <EndToEndDelay>400</EndToEndDelay>
+      <EndToEndDelay>800</EndToEndDelay>
       <Path>
         <PathNum>0</PathNum>
         <Link>
           <LinkID>0</LinkID>
           <Instance>
             <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-          <Instance>
-            <NumInstance>1</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>473</TransmissionTime>
+            <EndingTime>482</EndingTime>
           </Instance>
         </Link>
         <Link>
           <LinkID>2</LinkID>
           <Instance>
             <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-          <Instance>
-            <NumInstance>1</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>868</TransmissionTime>
+            <EndingTime>877</EndingTime>
           </Instance>
         </Link>
         <Link>
           <LinkID>4</LinkID>
           <Instance>
             <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-          <Instance>
-            <NumInstance>1</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>1263</TransmissionTime>
+            <EndingTime>1272</EndingTime>
           </Instance>
         </Link>
       </Path>
     </Frame>
     <Frame>
       <FrameID>6</FrameID>
-      <Period>2000</Period>
-      <Deadline>2000</Deadline>
+      <Period>4000</Period>
+      <Deadline>4000</Deadline>
       <Size>1000</Size>
       <StartingTime>0</StartingTime>
-      <EndToEndDelay>400</EndToEndDelay>
+      <EndToEndDelay>800</EndToEndDelay>
       <Path>
         <PathNum>0</PathNum>
         <Link>
-          <LinkID>5</LinkID>
+          <LinkID>0</LinkID>
           <Instance>
             <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-          <Instance>
-            <NumInstance>1</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>2473</TransmissionTime>
+            <EndingTime>2482</EndingTime>
           </Instance>
         </Link>
         <Link>
-          <LinkID>3</LinkID>
+          <LinkID>2</LinkID>
           <Instance>
             <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-          <Instance>
-            <NumInstance>1</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>2868</TransmissionTime>
+            <EndingTime>2877</EndingTime>
           </Instance>
         </Link>
         <Link>
-          <LinkID>1</LinkID>
+          <LinkID>4</LinkID>
           <Instance>
             <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-          <Instance>
-            <NumInstance>1</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>3263</TransmissionTime>
+            <EndingTime>3272</EndingTime>
           </Instance>
         </Link>
       </Path>
     </Frame>
     <Frame>
       <FrameID>7</FrameID>
-      <Period>2000</Period>
-      <Deadline>2000</Deadline>
+      <Period>4000</Period>
+      <Deadline>4000</Deadline>
       <Size>1000</Size>
       <StartingTime>0</StartingTime>
-      <EndToEndDelay>400</EndToEndDelay>
+      <EndToEndDelay>800</EndToEndDelay>
       <Path>
         <PathNum>0</PathNum>
         <Link>
           <LinkID>0</LinkID>
           <Instance>
             <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-          <Instance>
-            <NumInstance>1</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>2744</TransmissionTime>
+            <EndingTime>2753</EndingTime>
           </Instance>
         </Link>
         <Link>
           <LinkID>2</LinkID>
           <Instance>
             <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-          <Instance>
-            <NumInstance>1</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>3139</TransmissionTime>
+            <EndingTime>3148</EndingTime>
           </Instance>
         </Link>
         <Link>
           <LinkID>4</LinkID>
           <Instance>
             <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-          <Instance>
-            <NumInstance>1</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>3534</TransmissionTime>
+            <EndingTime>3543</EndingTime>
           </Instance>
         </Link>
       </Path>
     </Frame>
     <Frame>
       <FrameID>8</FrameID>
-      <Period>2000</Period>
-      <Deadline>2000</Deadline>
+      <Period>4000</Period>
+      <Deadline>4000</Deadline>
       <Size>1000</Size>
       <StartingTime>0</StartingTime>
-      <EndToEndDelay>400</EndToEndDelay>
+      <EndToEndDelay>800</EndToEndDelay>
       <Path>
         <PathNum>0</PathNum>
         <Link>
-          <LinkID>5</LinkID>
+          <LinkID>0</LinkID>
           <Instance>
             <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-          <Instance>
-            <NumInstance>1</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>744</TransmissionTime>
+            <EndingTime>753</EndingTime>
           </Instance>
         </Link>
         <Link>
-          <LinkID>3</LinkID>
+          <LinkID>2</LinkID>
           <Instance>
             <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-          <Instance>
-            <NumInstance>1</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>1139</TransmissionTime>
+            <EndingTime>1148</EndingTime>
           </Instance>
         </Link>
         <Link>
-          <LinkID>1</LinkID>
+          <LinkID>4</LinkID>
           <Instance>
             <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-          <Instance>
-            <NumInstance>1</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>1534</TransmissionTime>
+            <EndingTime>1543</EndingTime>
           </Instance>
         </Link>
       </Path>
     </Frame>
     <Frame>
       <FrameID>9</FrameID>
-      <Period>2000</Period>
-      <Deadline>2000</Deadline>
-      <Size>1000</Size>
-      <StartingTime>0</StartingTime>
-      <EndToEndDelay>400</EndToEndDelay>
-      <Path>
-        <PathNum>0</PathNum>
-        <Link>
-          <LinkID>0</LinkID>
-          <Instance>
-            <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-          <Instance>
-            <NumInstance>1</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-        </Link>
-        <Link>
-          <LinkID>2</LinkID>
-          <Instance>
-            <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-          <Instance>
-            <NumInstance>1</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-        </Link>
-        <Link>
-          <LinkID>4</LinkID>
-          <Instance>
-            <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-          <Instance>
-            <NumInstance>1</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-        </Link>
-      </Path>
-    </Frame>
-    <Frame>
-      <FrameID>10</FrameID>
       <Period>4000</Period>
       <Deadline>4000</Deadline>
       <Size>1000</Size>
@@ -645,339 +475,24 @@
           <LinkID>5</LinkID>
           <Instance>
             <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>1445</TransmissionTime>
+            <EndingTime>1454</EndingTime>
           </Instance>
         </Link>
         <Link>
           <LinkID>3</LinkID>
           <Instance>
             <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>1840</TransmissionTime>
+            <EndingTime>1849</EndingTime>
           </Instance>
         </Link>
         <Link>
           <LinkID>1</LinkID>
           <Instance>
             <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-        </Link>
-      </Path>
-    </Frame>
-    <Frame>
-      <FrameID>11</FrameID>
-      <Period>4000</Period>
-      <Deadline>4000</Deadline>
-      <Size>1000</Size>
-      <StartingTime>0</StartingTime>
-      <EndToEndDelay>800</EndToEndDelay>
-      <Path>
-        <PathNum>0</PathNum>
-        <Link>
-          <LinkID>5</LinkID>
-          <Instance>
-            <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-        </Link>
-        <Link>
-          <LinkID>3</LinkID>
-          <Instance>
-            <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-        </Link>
-        <Link>
-          <LinkID>1</LinkID>
-          <Instance>
-            <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-        </Link>
-      </Path>
-    </Frame>
-    <Frame>
-      <FrameID>12</FrameID>
-      <Period>4000</Period>
-      <Deadline>4000</Deadline>
-      <Size>1000</Size>
-      <StartingTime>0</StartingTime>
-      <EndToEndDelay>800</EndToEndDelay>
-      <Path>
-        <PathNum>0</PathNum>
-        <Link>
-          <LinkID>0</LinkID>
-          <Instance>
-            <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-        </Link>
-        <Link>
-          <LinkID>2</LinkID>
-          <Instance>
-            <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-        </Link>
-        <Link>
-          <LinkID>4</LinkID>
-          <Instance>
-            <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-        </Link>
-      </Path>
-    </Frame>
-    <Frame>
-      <FrameID>13</FrameID>
-      <Period>4000</Period>
-      <Deadline>4000</Deadline>
-      <Size>1000</Size>
-      <StartingTime>0</StartingTime>
-      <EndToEndDelay>800</EndToEndDelay>
-      <Path>
-        <PathNum>0</PathNum>
-        <Link>
-          <LinkID>0</LinkID>
-          <Instance>
-            <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-        </Link>
-        <Link>
-          <LinkID>2</LinkID>
-          <Instance>
-            <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-        </Link>
-        <Link>
-          <LinkID>4</LinkID>
-          <Instance>
-            <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-        </Link>
-      </Path>
-    </Frame>
-    <Frame>
-      <FrameID>14</FrameID>
-      <Period>4000</Period>
-      <Deadline>4000</Deadline>
-      <Size>1000</Size>
-      <StartingTime>0</StartingTime>
-      <EndToEndDelay>800</EndToEndDelay>
-      <Path>
-        <PathNum>0</PathNum>
-        <Link>
-          <LinkID>5</LinkID>
-          <Instance>
-            <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-        </Link>
-        <Link>
-          <LinkID>3</LinkID>
-          <Instance>
-            <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-        </Link>
-        <Link>
-          <LinkID>1</LinkID>
-          <Instance>
-            <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-        </Link>
-      </Path>
-    </Frame>
-    <Frame>
-      <FrameID>15</FrameID>
-      <Period>4000</Period>
-      <Deadline>4000</Deadline>
-      <Size>1000</Size>
-      <StartingTime>0</StartingTime>
-      <EndToEndDelay>800</EndToEndDelay>
-      <Path>
-        <PathNum>0</PathNum>
-        <Link>
-          <LinkID>0</LinkID>
-          <Instance>
-            <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-        </Link>
-        <Link>
-          <LinkID>2</LinkID>
-          <Instance>
-            <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-        </Link>
-        <Link>
-          <LinkID>4</LinkID>
-          <Instance>
-            <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-        </Link>
-      </Path>
-    </Frame>
-    <Frame>
-      <FrameID>16</FrameID>
-      <Period>4000</Period>
-      <Deadline>4000</Deadline>
-      <Size>1000</Size>
-      <StartingTime>0</StartingTime>
-      <EndToEndDelay>800</EndToEndDelay>
-      <Path>
-        <PathNum>0</PathNum>
-        <Link>
-          <LinkID>0</LinkID>
-          <Instance>
-            <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-        </Link>
-        <Link>
-          <LinkID>2</LinkID>
-          <Instance>
-            <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-        </Link>
-        <Link>
-          <LinkID>4</LinkID>
-          <Instance>
-            <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-        </Link>
-      </Path>
-    </Frame>
-    <Frame>
-      <FrameID>17</FrameID>
-      <Period>4000</Period>
-      <Deadline>4000</Deadline>
-      <Size>1000</Size>
-      <StartingTime>0</StartingTime>
-      <EndToEndDelay>800</EndToEndDelay>
-      <Path>
-        <PathNum>0</PathNum>
-        <Link>
-          <LinkID>5</LinkID>
-          <Instance>
-            <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-        </Link>
-        <Link>
-          <LinkID>3</LinkID>
-          <Instance>
-            <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-        </Link>
-        <Link>
-          <LinkID>1</LinkID>
-          <Instance>
-            <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-        </Link>
-      </Path>
-    </Frame>
-    <Frame>
-      <FrameID>18</FrameID>
-      <Period>4000</Period>
-      <Deadline>4000</Deadline>
-      <Size>1000</Size>
-      <StartingTime>0</StartingTime>
-      <EndToEndDelay>800</EndToEndDelay>
-      <Path>
-        <PathNum>0</PathNum>
-        <Link>
-          <LinkID>0</LinkID>
-          <Instance>
-            <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-        </Link>
-        <Link>
-          <LinkID>2</LinkID>
-          <Instance>
-            <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-        </Link>
-        <Link>
-          <LinkID>4</LinkID>
-          <Instance>
-            <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-        </Link>
-      </Path>
-    </Frame>
-    <Frame>
-      <FrameID>19</FrameID>
-      <Period>4000</Period>
-      <Deadline>4000</Deadline>
-      <Size>1000</Size>
-      <StartingTime>0</StartingTime>
-      <EndToEndDelay>800</EndToEndDelay>
-      <Path>
-        <PathNum>0</PathNum>
-        <Link>
-          <LinkID>5</LinkID>
-          <Instance>
-            <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-        </Link>
-        <Link>
-          <LinkID>3</LinkID>
-          <Instance>
-            <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
-          </Instance>
-        </Link>
-        <Link>
-          <LinkID>1</LinkID>
-          <Instance>
-            <NumInstance>0</NumInstance>
-            <TransmissionTime>-1</TransmissionTime>
-            <EndingTime>8</EndingTime>
+            <TransmissionTime>2235</TransmissionTime>
+            <EndingTime>2244</EndingTime>
           </Instance>
         </Link>
       </Path>

@@ -17,7 +17,8 @@ int main(int argc, const char * argv[]) {
     printf("Hello, World!\n");
     read_network_xml("/Users/fpo01/OneDrive - Mälardalens högskola/PhD Folder/Software/SelfHealingProtocol/SelfHealingProtocol/Files/Networks/network.xml");
     prepare_network();
-    one_shot_scheduling(NULL);
+    read_schedule_parameters_xml("/Users/fpo01/OneDrive - Mälardalens högskola/PhD Folder/Software/SelfHealingProtocol/SelfHealingProtocol/Files/Configurations/Configuration.xml");
+    schedule_network();
     write_schedule_xml("/Users/fpo01/OneDrive - Mälardalens högskola/PhD Folder/Software/SelfHealingProtocol/SelfHealingProtocol/Files/Schedules/schedule.xml");
     return 0;
 }

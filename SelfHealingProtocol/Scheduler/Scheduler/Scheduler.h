@@ -23,6 +23,11 @@
 
                                                 /* STRUCT DEFINITIONS */
 
+typedef enum Scheduler{
+    one_shot,
+    incremental
+}Scheduler;
+
                                                 /* AUXILIAR FUNCTIONS */
 
                                                 /* CODE DEFINITIONS */
@@ -30,7 +35,29 @@
 /**
  Schedule all the transmission times of all the frames at the same time given the given scheduling parameters
 
- @param schedule_params xml file with the scheduling parameters
  @return 0 if the schedule was found, -1 otherwise
  */
-int one_shot_scheduling(char *schedule_params);
+int one_shot_scheduling(void);
+
+/**
+ Schedule all the tranmission times of all the frames iteratively.
+ The number of frames per each iteration and the timing limit is given in the scheduling paramenters file
+
+ @return 0 if the schedule was found, -1 otherwise
+ */
+int incremental_approach(void);
+
+/**
+ Schedule the network given the parameters read before
+
+ @return 0 if the schedule was found, -1 otherwise
+ */
+int schedule_network(void);
+
+/**
+ Read the scheduler parameters
+
+ @param parameters_xml name and path of the parameter xml file
+ @return 0 if done correctly, -1 otherwise
+ */
+int read_schedule_parameters_xml(char *parameters_xml);

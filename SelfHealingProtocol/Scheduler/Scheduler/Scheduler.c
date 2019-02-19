@@ -18,8 +18,8 @@
 GRBenv *env = NULL;                 // Gurobi solver environment
 GRBmodel *model = NULL;             // Gurobi model
 int var_it = 0;                     // Iterator to remember the value to position variables in gurobi
-int *frame_dis;                     // Indexes for the gurobi variables for the frame distances
-int *link_dis;                      // Indexes for the gurobi variables for the link distances
+int *frame_dis = NULL;              // Indexes for the gurobi variables for the frame distances
+int *link_dis = NULL;               // Indexes for the gurobi variables for the link distances
 double frame_dis_w = 0.9;           // Weight for the frame distances
 double link_dis_w = 0.1;            // Link for the link distances
 long long int path_con = 0;         // Counter of path dependent constraints
@@ -29,10 +29,73 @@ long long int x_con = 0;            // Counter of x bin variables
 long long int y_con = 0;            // Counter of y bin variables
 long long int z_con = 0;            // Counter of z bin variables
 long long int or_con = 0;           // Counter of z = x or y variables
+long long int fix_con = 0;          // Counter of fixed variables
+int frames_it = 1;                  // Frames solved at each iteration of the incremental approach
+Scheduler algorithm;                // Algorithm used to schedule the network
+double MIPGAP = 0.0;                // MIP GAP limit when to stop searching
+double timelimit;                   // Time limit when to stop executing the solver (in the case of the incremetal
+                                    // it is the time limit PER ITERATION)
+
 
                                                     /* FUNCTIONS */
 
 /* Auxiliar Functions */
+
+/**
+ Set the scheduler algorithm
+
+ @param name string of the name of the algorithm
+ @return 0 if done correctly, -1 otherwise
+ */
+int set_algorithm(char *name) {
+    
+    if (strcmp(name, "OneShot") == 0) {
+        algorithm = one_shot;
+    } else if (strcmp(name, "Incremental") == 0) {
+        algorithm = incremental;
+    } else {
+        fprintf(stderr, "The given algorithm is not defined\n");
+        return -1;
+    }
+    
+    return 0;
+}
+
+/**
+ Set the MIP GAP Limit of the solver
+
+ @param value MIP GAP
+ @return 0 if done correctly, -1 otherwise
+ */
+int set_MIPGAP(double value) {
+    
+    if (value < 0.0) {
+        fprintf(stderr, "The MIPGAP should be equal or larger than 0.0\n");
+        return -1;
+    }
+    
+    MIPGAP = value;
+    
+    return 0;
+}
+
+/**
+ Set the time limit of the solver
+ 
+ @param value time limit
+ @return 0 if done correctly, -1 otherwise
+ */
+int set_timelimit(double value) {
+    
+    if (value < 0.0) {
+        fprintf(stderr, "The time limit should be equal or larger than 0.0\n");
+        return -1;
+    }
+    
+    timelimit = value;
+    
+    return 0;
+}
 
 /**
  Init the solver and prepare it to add constraints
@@ -46,6 +109,12 @@ int init_solver(void) {
         fprintf(stderr, "The gurobi solver could not be initialized\n");
         return -1;
     }
+    
+    // Set the MIPGAP
+    GRBsetdblparam(env, GRB_DBL_PAR_MIPGAP, MIPGAP);
+    // Set the time limit
+    GRBsetdblparam(env, GRB_DBL_PAR_TIMELIMIT, timelimit);
+    
     error = GRBnewmodel(env, &model, "schedule", 0, NULL, NULL, NULL, NULL, NULL);
     if (error) {
         fprintf(stderr, "The gurobi solver could not create the model\n");
@@ -74,15 +143,17 @@ int close_solver(void) {
  Init the offsets of all the frames and limit them to their starting time and their deadline
 
  @param frames list of frames to init
- @param num numbr of frames to init
+ @param num number of frames to init
+ @param accum_num number of frames that were already created their offsets
+ @param do_protocol if 1, add also the Self-Healing Protocol variables
  @return 0 if done correctly, -1 otherwise
  */
-int create_offsets_variables(Frame *frames, int num) {
+int create_offsets_variables(Frame *frames, int num, int accum_num, int do_protocol) {
     
     char name[100];
     
     // Add all the variables for all transmission times of all frames
-    for (int i = 0; i < num; i++) {
+    for (int i = accum_num; (i - accum_num) < num; i++) {
         int frame_id = get_frame_id(i);
         for (int j = 0; j < get_num_offsets(&frames[i]); j++) {
             Offset *off = get_offset_it(&frames[i], j);
@@ -111,7 +182,7 @@ int create_offsets_variables(Frame *frames, int num) {
     
     // Add all the variables for the self-healing protocol if it exists
     SelfHealing_Protocol *shp = get_healing_protocol();
-    if (shp->period != 0) {
+    if (shp->period != 0 && do_protocol == 1) {
         for (int i = 0; i < get_num_offsets(&shp->reservation); i++) {
             Offset *off = get_offset_it(&shp->reservation, i);
             for (int inst = 0; inst < get_off_num_instances(off); inst++) {
@@ -139,17 +210,29 @@ int create_offsets_variables(Frame *frames, int num) {
 
  @param frames list of frames to create the contraint
  @param num number of frames in the list
+ @param accum_num number of frames that were already created their offsets
+ @param it iteration for creating the link intermission differently for each iteration
  @return 0 if done correctly, -1 otherwise
  */
-int create_intermission_variables(Frame *frames, int num) {
+int create_intermission_variables(Frame *frames, int num, int accum_num, int it) {
     
     char name[100];
+    
+    // If link distances were init, remove the obj from them
+    if (link_dis != NULL) {
+        for (int i = 0; i <= get_higher_link_id(); i++) {
+            GRBsetdblattrelement(model, GRB_DBL_ATTR_OBJ, link_dis[i], 0.0);
+        }
+    }
+    
     // Allocate to save the frame and link distances variables
-    frame_dis = malloc(sizeof(int) * num);
+    frame_dis = realloc(frame_dis, sizeof(int) * (accum_num + num));
     link_dis = malloc(sizeof(int) * (get_higher_link_id() + 1));
     
+    
+    
     // Create all the frame intermissions
-    for (int i = 0; i < num; i++) {
+    for (int i = accum_num; (i - accum_num) < num; i++) {
         sprintf(name, "FrameDis_%d", get_frame_id(i));
         
         if (GRBaddvar(model, 0, NULL, NULL, frame_dis_w, 0, get_end_to_end(&frames[i]), GRB_INTEGER, name)) {
@@ -162,7 +245,7 @@ int create_intermission_variables(Frame *frames, int num) {
     
     // Create all the link intermissions
     for (int i = 0; i <= get_higher_link_id(); i++) {
-        sprintf(name, "LinkDis_%d", i);
+        sprintf(name, "LinkDis_%d_%d", it, i);
         if (GRBaddvar(model, 0, NULL, NULL, link_dis_w, 0, get_hyperperiod(), GRB_INTEGER, name)) {
             printf("%s\n", GRBgeterrormsg(env));
             return -1;
@@ -179,13 +262,14 @@ int create_intermission_variables(Frame *frames, int num) {
 
  @param frames list of frames to create the contraint
  @param num number of frames in the list
+ @param accum_num number of frames that were already created their offsets
  @return 0 if done correctly, -1 otherwise
  */
-int path_dependent(Frame *frames, int num) {
+int path_dependent(Frame *frames, int num, int accum_num) {
     
     char name[100];
     // For all frames, for every different path, iterate over all the links
-    for (int i = 0; i < num; i++) {
+    for (int i = accum_num; (i - accum_num) < num; i++) {
         for (int j = 0; j < get_num_paths(&frames[i]); j++) {
             
             Path *path_pt = get_path(&frames[i], j);
@@ -219,13 +303,14 @@ int path_dependent(Frame *frames, int num) {
 
  @param frames list of frames to create the constraint
  @param num number of frames in the list
+ @param accum_num number of frames that were already created their offsets
  @return 0 if done correctly, -1 otherwise
  */
-int end_to_end_delay(Frame *frames, int num) {
+int end_to_end_delay(Frame *frames, int num, int accum_num) {
     
     char name[100];
     // For all xrames, for all paths, add the constraint between the first and last link on the path
-    for (int i = 0; i < num; i++) {
+    for (int i = accum_num; (i - accum_num) < num; i++) {
         for (int j = 0; j < get_num_paths(&frames[i]); j++) {
             Path *path_pt = get_path(&frames[i], j);
             Offset *first_off_pt = get_offset_path_link(path_pt, 0);
@@ -278,13 +363,14 @@ int end_to_end_delay(Frame *frames, int num) {
 
  @param frames list of frames to create the constraint
  @param num number of frames in the list
+ @param accum_num number of frames that were already created their offsets
  @return 0 if done correctly, -1 otherwise
  */
-int contention_free(Frame *frames, int num) {
+int contention_free(Frame *frames, int num, int accum_num) {
     
     char name[100];
     // For all frames, for all its offsets, if the offsets can collide, add constraint to avoid it
-    for (int fr_it = 0; fr_it < num; fr_it++) {
+    for (int fr_it = accum_num; (fr_it - accum_num) < num; fr_it++) {
         for (int i = 0; i < get_num_offsets(&frames[fr_it]); i++) {
             Offset *off = get_offset_it(&frames[fr_it], i);
             int link_id = get_link_id_offset_it(&frames[fr_it], i);
@@ -408,12 +494,15 @@ int contention_free(Frame *frames, int num) {
 
  @param frames list of frames to create the constraint
  @param num number of frames in the list
+ @param accum_num number of frames that were already created their offsets
  @return 0 if done correctly, -1 otherwise
  */
-int save_offsets(Frame *frames, int num) {
+int save_offsets(Frame *frames, int num, int accum_num) {
+    
+    char name[100];
     
     // Iterate over all the given frames and their given offsets
-    for (int i = 0; i < num; i++) {
+    for (int i = accum_num; (i - accum_num) < num; i++) {
         for (int j = 0; j < get_num_offsets(&frames[i]); j++) {
             Offset *off = get_offset_it(&frames[i], j);
             for (int inst = 0; inst < get_off_num_instances(off); inst++) {
@@ -425,11 +514,23 @@ int save_offsets(Frame *frames, int num) {
                         return -1;
                     }
                     set_trans_time(off, inst, repl, (long long int) trans_time);
+                    
+                    // Fix the transmission time in the model
+                    sprintf(name, "Fix_%lld", fix_con);
+                    int ind[] = {get_var_name(off, inst, repl)};
+                    double val[] = {1.0};
+                    if (GRBaddconstr(model, 1, ind, val, GRB_EQUAL, trans_time, name)) {
+                        printf("%s\n", GRBgeterrormsg(env));
+                        return -1;
+                    }
+                    fix_con += 1;
                 }
             }
         }
+        // Remove the objective from the scheduled frame
+        GRBsetdblattrelement(model, GRB_DBL_ATTR_OBJ, frame_dis[i], 0.0);
     }
-    GRBupdatemodel(model);
+    
     return 0;
 }
 
@@ -582,43 +683,38 @@ int check_schedule(Frame *frames, int num) {
  If the protocol bandwitch is activated, avoid frames to the transmitted at the reserver bandwidth
  There might optimization, such as minimize the timespan, of increase the reparability
  */
-int one_shot_scheduling(char *schedule_params) {
+int one_shot_scheduling(void) {
     
     init_solver();
     Traffic *t = get_traffic();
     
-    // Allocate the memory for the link intermissions
-    
-    
-    if (create_offsets_variables(t->frames, t->num_frames) == -1) {
+    if (create_offsets_variables(t->frames, t->num_frames, 0, 1) == -1) {
         fprintf(stderr, "Failure creating offsets\n");
         return -1;
     }
     
-    if (create_intermission_variables(t->frames, t->num_frames) == -1) {
+    if (create_intermission_variables(t->frames, t->num_frames, 0, 0) == -1) {
         fprintf(stderr, "Failure creating intermission variables\n");
         return -1;
     }
 
-    if (path_dependent(t->frames, t->num_frames) == -1) {
+    if (path_dependent(t->frames, t->num_frames, 0) == -1) {
         fprintf(stderr, "Failure adding path dependent constraints\n");
         return -1;
     }
 
-    if (end_to_end_delay(t->frames, t->num_frames) == -1) {
+    if (end_to_end_delay(t->frames, t->num_frames, 0) == -1) {
         fprintf(stderr, "Failure adding end to end delay constraints\n");
         return -1;
     }
 
-    if (contention_free(t->frames, t->num_frames) == -1) {
+    if (contention_free(t->frames, t->num_frames, 0) == -1) {
         fprintf(stderr, "Failure adding contention free constraints\n");
         return -1;
     }
     
-    GRBoptimize(model);
     
-    // For testing purposes print the model
-    GRBwrite(model, "/Users/fpo01/OneDrive - Mälardalens högskola/PhD Folder/Software/SelfHealingProtocol/SelfHealingProtocol/Files/Outputs/model.lp");
+    GRBoptimize(model);
     
     int solcount;
     GRBgetintattr(model, GRB_INT_ATTR_SOLCOUNT, &solcount);
@@ -627,16 +723,225 @@ int one_shot_scheduling(char *schedule_params) {
         return -1;
     }
     
-    // For testing purposes print the solution
-    GRBwrite(model, "/Users/fpo01/OneDrive - Mälardalens högskola/PhD Folder/Software/SelfHealingProtocol/SelfHealingProtocol/Files/Outputs/model.sol");
-    
     // Save the obtained model into internal memory and check if the solver is correct (does not violate constraints)
-    save_offsets(t->frames, t->num_frames);
+    save_offsets(t->frames, t->num_frames, 0);
     if (check_schedule(t->frames, t->num_frames) != 0) {
         fprintf(stderr, "The obtained schedule violates some of the given constraints\n");
         return -1;
     }
     
     close_solver();
+    return 0;
+}
+
+/**
+ Schedule all the tranmission times of all the frames iteratively.
+ The number of frames per each iteration and the timing limit is given in the scheduling paramenters file
+ */
+int incremental_approach(void) {
+    
+    int frames_scheduled = 0;       // Number of frames already scheduled
+    int it = 1;                     // Number of iteration done in the incremental approach
+    int do_protocol = 1;            // Init variables of the self-healing protocol
+    char name[200];
+    
+    init_solver();
+    Traffic *t = get_traffic();
+    
+    // While there are frames to schedule, we iterate
+    while (frames_scheduled < t->num_frames) {
+        
+        // Adjust the frame_it so it does not try to schedule frames that do not exist
+        if (frames_scheduled + frames_it > t->num_frames) {
+            frames_it = t->num_frames - frames_scheduled;
+        }
+        if (frames_scheduled == 0) {
+            do_protocol = 1;
+        } else {
+            do_protocol = 0;
+        }
+        
+        if (create_offsets_variables(t->frames, frames_it, frames_scheduled, do_protocol) == -1) {
+            fprintf(stderr, "Failure creating offsets\n");
+            return -1;
+        }
+        
+        if (create_intermission_variables(t->frames, frames_it, frames_scheduled, it) == -1) {
+            fprintf(stderr, "Failure creating intermission variables\n");
+            return -1;
+        }
+        
+        if (path_dependent(t->frames, frames_it, frames_scheduled) == -1) {
+            fprintf(stderr, "Failure adding path dependent constraints\n");
+            return -1;
+        }
+        
+        if (end_to_end_delay(t->frames, frames_it, frames_scheduled) == -1) {
+            fprintf(stderr, "Failure adding end to end delay constraints\n");
+            return -1;
+        }
+        
+        if (contention_free(t->frames, frames_it, frames_scheduled) == -1) {
+            fprintf(stderr, "Failure adding contention free constraints\n");
+            return -1;
+        }
+        
+        GRBwrite(model, name);
+        
+        GRBoptimize(model);
+        
+        int solcount;
+        GRBgetintattr(model, GRB_INT_ATTR_SOLCOUNT, &solcount);
+        if (solcount == 0) {
+            fprintf(stderr, "No schedule found for the iteration %d\n", it);
+            return -1;
+        }
+        
+        GRBwrite(model, name);
+        
+        // Save the obtained model into internal memory and check if the solver is correct (does not violate constraints)
+        save_offsets(t->frames, frames_it, frames_scheduled);
+        
+        // Adjust the indexes
+        it += 1;
+        frames_scheduled += frames_it;
+    }
+    
+    if (check_schedule(t->frames, t->num_frames) != 0) {
+        fprintf(stderr, "The obtained schedule violates some of the given constraints\n");
+        return -1;
+    }
+    
+    close_solver();
+    return 0;
+}
+
+/**
+ Schedule the network given the parameters read before
+  */
+int schedule_network(void) {
+    
+    switch (algorithm) {
+        case one_shot:
+            if (one_shot_scheduling() != 0) {
+                fprintf(stderr, "The schedule could not be found with the one-shot approach\n");
+                return -1;
+            }
+            break;
+            
+        case incremental:
+            if (incremental_approach() != 0) {
+                fprintf(stderr, "The schedule could not be found with the incremental approach\n");
+                return -1;
+            }
+            break;
+        default:
+            fprintf(stderr, "The given scheduler algorithm is not implemented\n");
+            return -1;
+            break;
+    }
+    return 0;
+}
+
+/* Input Functions */
+
+/**
+ Get the value of the given path in double
+
+ @param top_xml pointer to the top of the xml tree
+ @param path to the parameters to read
+ @return the read parameter converted to dbl, -1 otherwise
+ */
+double get_float_value_xml(xmlDoc *top_xml, char *path) {
+    
+    // Init xml variables needed to search information in the file
+    xmlChar *value;
+    xmlXPathContextPtr context;
+    xmlXPathObjectPtr result;
+    
+    double return_value;
+    
+    // Search for the value
+    context = xmlXPathNewContext(top_xml);
+    result = xmlXPathEvalExpression((xmlChar*) path, context);
+    if (result->nodesetval->nodeTab == NULL) {
+        fprintf(stderr, "The searched value is not defined\n");
+        return -1.0;
+    }
+    value = xmlNodeListGetString(top_xml, result->nodesetval->nodeTab[0]->xmlChildrenNode, 1);
+    
+    return_value = atof((char*)value);
+    
+    // Free xml objects
+    xmlFree(value);
+    xmlXPathFreeObject(result);
+    xmlXPathFreeContext(context);
+    
+    return return_value;
+}
+
+/**
+ Read the scheduler parameters
+ */
+int read_schedule_parameters_xml(char *parameters_xml) {
+    
+    // Init xml variables needed to search information in the file
+    xmlChar *value = NULL, *value2;
+    xmlXPathContextPtr context;
+    xmlXPathObjectPtr result;
+    xmlDoc *top_xml;        // Variables that contains the xml document top tree
+    double timelimit, MIPGAP;
+    
+    // Open the xml file if it exists
+    top_xml = xmlReadFile(parameters_xml, NULL, 0);
+    if (top_xml == NULL) {
+        fprintf(stderr, "The given xml file does not exist\n");
+        return -1;
+    }
+    
+    // Search for the algorithm
+    context = xmlXPathNewContext(top_xml);
+    result = xmlXPathEvalExpression((xmlChar*) "/Configuration/Schedule/Algorithm", context);
+    if (result->nodesetval->nodeTab == NULL) {
+        fprintf(stderr, "The searched value is not defined\n");
+        return -1;
+    }
+    value2 = xmlGetProp(result->nodesetval->nodeTab[0], (xmlChar*) "name");
+    if (set_algorithm((char *)value2) != 0) {
+        fprintf(stderr, "Error reading the scheduling algorithm\n");
+        return -1;
+    }
+    
+    MIPGAP = get_float_value_xml(top_xml, "/Configuration/Schedule/Algorithm/MIPGAP");
+    if (set_MIPGAP(MIPGAP) != 0) {
+        fprintf(stderr, "The MIPGAP was wrongly read\n");
+        return -1;
+    }
+    timelimit = get_float_value_xml(top_xml, "/Configuration/Schedule/Algorithm/TimeLimit");
+    if (set_timelimit(timelimit) != 0) {
+        fprintf(stderr, "The time limit was wrongly read\n");
+        return -1;
+    }
+    
+    // If the algorithm is the incremental approach, read also the number of frames scheduled per iteration
+    if (algorithm == incremental) {
+        
+        // Search for the value
+        context = xmlXPathNewContext(top_xml);
+        result = xmlXPathEvalExpression((xmlChar*) "/Configuration/Schedule/Algorithm/FramesIteration", context);
+        if (result->nodesetval->nodeTab == NULL) {
+            fprintf(stderr, "The searched value is not defined\n");
+            return -1;
+        }
+        value = xmlNodeListGetString(top_xml, result->nodesetval->nodeTab[0]->xmlChildrenNode, 1);
+        frames_it = atoi((char *)value);
+    }
+    
+    // Free xml objects
+    xmlFree(value);
+    xmlFree(value2);
+    xmlXPathFreeObject(result);
+    xmlXPathFreeContext(context);
+    xmlFreeDoc(top_xml);
     return 0;
 }
