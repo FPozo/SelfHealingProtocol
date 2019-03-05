@@ -4,8 +4,30 @@
 <dict>
 	<key>SchemeUserState</key>
 	<dict>
+		<key>Optimize.xcscheme_^#shared#^_</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>1</integer>
+		</dict>
+		<key>Patch copy.xcscheme_^#shared#^_</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>3</integer>
+		</dict>
+		<key>Patch.xcscheme_^#shared#^_</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>2</integer>
+		</dict>
+		<key>SelfHealingProtocol copy.xcscheme_^#shared#^_</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>1</integer>
+		</dict>
 		<key>SelfHealingProtocol.xcscheme_^#shared#^_</key>
 		<dict>
+			<key>isShown</key>
+			<false/>
 			<key>orderHint</key>
 			<integer>0</integer>
 		</dict>
@@ -13,6 +35,11 @@
 	<key>SuppressBuildableAutocreation</key>
 	<dict>
 		<key>6085E51621A40F0C00F13E7B</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>60E48AC222281E5C0017E0E5</key>
 		<dict>
 			<key>primary</key>
 			<true/>

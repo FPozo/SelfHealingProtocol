@@ -32,6 +32,10 @@ Link **link_accelerator;            // List of pointers to the links in the topo
 Node **node_accelerator;            // List of pointers to the nodes in the topology indexed by id
 Frame **frame_accelerator;          // List of pointers to the frames in the topology indexed by id
 
+// Patching needed extra information
+int patched_link;                   // Link being patched
+int num_frames_fixed;               // Number of frames that are already fixed
+
                                             /* AUXILIAR FUNCTIONS */
 
 
@@ -147,6 +151,14 @@ int is_node_id_defined(int id) {
                                                 /* FUNCTIONS */
 
 /* Getters */
+
+/**
+ Get the number of fixed frames for the patch
+ */
+int get_num_fixed_frames(void) {
+    
+    return num_frames_fixed;
+}
 
 /**
  Get the switch minimum time in ns
@@ -399,6 +411,42 @@ long long int get_time_value_xml(xmlDoc *top_xml, char* path) {
     
     return time;
     
+}
+
+/**
+ Given the top xml of the tree and the path, get the time converted to ns
+ 
+ @param top_xml pointer to the top of the tree
+ @param path path where to find the value
+ @return the value read converted to nanoseconds
+ */
+long long int get_value_xml(xmlDoc *top_xml, char* path) {
+ 
+    // Init xml variables needed to search information in the file
+    xmlChar *value;
+    xmlXPathContextPtr context;
+    xmlXPathObjectPtr result;
+    
+    long long int return_value;
+    
+    // Search for the value
+    context = xmlXPathNewContext(top_xml);
+    result = xmlXPathEvalExpression((xmlChar*) path, context);
+    if (result->nodesetval->nodeTab == NULL) {
+        fprintf(stderr, "The searched value is not defined\n");
+        return -1;
+    }
+    value = xmlNodeListGetString(top_xml, result->nodesetval->nodeTab[0]->xmlChildrenNode, 1);
+    
+    // Convert the read value into int and save
+    return_value = atoll((const char*) value);
+    
+    // Free xml objects
+    xmlFree(value);
+    xmlXPathFreeObject(result);
+    xmlXPathFreeContext(context);
+    
+    return return_value;
 }
 
 /**
@@ -1218,6 +1266,394 @@ int read_network_xml(char *network_file) {
     return 0;
 }
 
+/**
+ Read the general patch information of the network and add its into the Network variables
+ 
+ @param top_xml pointer to general information tree
+ @return 0 if all information was saved correctly, -1 otherwise
+ */
+int read_general_patch_information_xml(xmlDoc *top_xml) {
+    
+    char* path = "/Patch/GeneralInformation/LinkID";
+    patched_link = (int)get_value_xml(top_xml, path);
+    
+    // Set the healing protocol
+    path = "/Patch/GeneralInformation/ProtocolPeriod";
+    long long int protocol_period = get_value_xml(top_xml, path);
+    path = "/Patch/GeneralInformation/ProtocolTime";
+    long long int protocol_time = get_value_xml(top_xml, path);
+    set_healing_protocol(protocol_period, protocol_time);
+    
+    // Read the hyper period
+    path = "/Patch/GeneralInformation/HyperPeriod";
+    hyperperiod = get_value_xml(top_xml, path);
+    
+    return 0;
+}
+
+/**
+ Read the fixed traffic information of the patch
+
+ @param top_xml pointer to the top of the tree
+ @return 0 if done correctly, -1 otherwise
+ */
+int read_patch_fixed_traffix_xml(xmlDoc *top_xml) {
+    
+    // Read the number of frames and allocate the needed memory in the list of frames
+    char *path = "/Patch/FixedTraffic/Frame";
+    int num_frames = get_occurences_xml(top_xml, path);
+    if (num_frames == 0) {
+        return 0;
+    }
+    num_frames_fixed = num_frames;
+    traffic.num_frames = num_frames;
+    traffic.frames = malloc(sizeof(Frame) * num_frames);
+    traffic.frames_id = malloc(sizeof(int) * num_frames);
+    
+    // For all frames, save its information
+    for (int i = 0; i < num_frames; i++) {
+        
+        // Search and save the frame ID
+        char *value = get_occur_value_xml(top_xml, path, i, "FrameID");
+        if (value == NULL) {
+            fprintf(stderr, "A frameID could not be found\n");
+            return -1;
+        }
+        int frame_id = atoi(value);
+        if (frame_id < 0) {
+            fprintf(stderr, "The frameID should be a natural number\n");
+            return -1;
+        }
+        if (frame_id > higher_frame_id) {
+            higher_frame_id = frame_id;
+        }
+        traffic.frames_id[i] = frame_id;
+        
+        // As there is only one link, there exist only one receiver
+        traffic.frames[i].num_paths = 1;
+        traffic.frames[i].receivers_id = malloc(sizeof(int));
+        traffic.frames[i].list_paths = malloc(sizeof(Path));
+        set_receiver_id(&traffic.frames[i], 0, 1);
+        int path_array[] = {patched_link};
+        set_path_receiver_id(&traffic.frames[i], 1, path_array, 1);
+        
+        // Read the offsets and save the transmission and ending times
+        int num_instances = get_ocurrences_in_ocurrences_xml(top_xml, path, i, "Offset/Instance");
+        init_offset_patch(&traffic.frames[i], num_instances, 0);
+        Offset *offset_pt = get_offset_it(&traffic.frames[i], 0);
+        for (int j = 0; j < num_instances; j++) {
+            long long int trans_time = atoll(get_ocurr_in_ocurr_value_xml(top_xml, path, i, "Offset/Instance", j,
+                                                                    "TransmissionTime"));
+            set_trans_time(offset_pt, j, 0, trans_time);
+        }
+        long long int trans_time = atoll(get_ocurr_in_ocurr_value_xml(top_xml, path, i, "Offset/Instance", 0,
+                                                                      "TransmissionTime"));
+        long long int end_time = atoll(get_ocurr_in_ocurr_value_xml(top_xml, path, i, "Offset/Instance", 0,
+                                                                      "EndingTime"));
+        // Set the time to transmit the frame
+        set_time_offset_it(&traffic.frames[i], 0, (int)(end_time - trans_time));
+    }
+    
+    return 0;
+}
+
+/**
+ Read the traffic information of the patch to allocate
+ 
+ @param top_xml pointer to the top of the tree
+ @return 0 if done correctly, -1 otherwise
+ */
+int read_patch_traffic_xml(xmlDoc *top_xml) {
+ 
+    // Read the number of frames and allocate the needed memory in the list of frames
+    char *path = "/Patch/Traffic/Frame";
+    int num_frames = get_occurences_xml(top_xml, path);
+    traffic.num_frames += num_frames;
+    // If there was no number of frames fixed, we have to allocate the traffic
+    if (num_frames_fixed == 0) {
+        traffic.frames = malloc(sizeof(Frame) * num_frames);
+        traffic.frames_id = malloc(sizeof(int) * num_frames);
+    } else {
+        traffic.frames = realloc(traffic.frames, sizeof(Frame) * traffic.num_frames);
+        traffic.frames_id = realloc(traffic.frames_id, sizeof(int) * traffic.num_frames);
+    }
+    
+    // For all frames, save its information
+    for (int i = num_frames_fixed; i < traffic.num_frames; i++) {
+        
+        // Search and save the frame ID
+        char *value = get_occur_value_xml(top_xml, path, i - num_frames_fixed, "FrameID");
+        if (value == NULL) {
+            fprintf(stderr, "A frameID could not be found\n");
+            return -1;
+        }
+        int frame_id = atoi(value);
+        if (frame_id < 0) {
+            fprintf(stderr, "The frameID should be a natural number\n");
+            return -1;
+        }
+        if (frame_id > higher_frame_id) {
+            higher_frame_id = frame_id;
+        }
+        traffic.frames_id[i] = frame_id;
+        
+        // As there is only one link, there exist only one receiver
+        traffic.frames[i].num_paths = 1;
+        traffic.frames[i].receivers_id = malloc(sizeof(int));
+        traffic.frames[i].list_paths = malloc(sizeof(Path));
+        set_receiver_id(&traffic.frames[i], 0, 1);
+        int path_array[] = {patched_link};
+        set_path_receiver_id(&traffic.frames[i], 1, path_array, 1);
+        
+        // Read the offsets and save the transmission ranges and timeslots of the transmission
+        int num_instances = get_ocurrences_in_ocurrences_xml(top_xml, path, i - num_frames_fixed, "Offset/Instance");
+        init_offset_patch(&traffic.frames[i], num_instances, 0);
+        Offset *offset_pt = get_offset_it(&traffic.frames[i], 0);
+        int time_slot = atoi(get_occur_value_xml(top_xml, path, i - num_frames_fixed, "Offset/TimeSlots"));
+        for (int j = 0; j < num_instances; j++) {
+            long long int min_transmission = atoll(get_ocurr_in_ocurr_value_xml(top_xml, path, i - num_frames_fixed,
+                                                                                "Offset/Instance", j,
+                                                                                "MinTransmission"));
+            long long int max_transmission = atoll(get_ocurr_in_ocurr_value_xml(top_xml, path, i - num_frames_fixed,
+                                                                                "Offset/Instance", j,
+                                                                                "MaxTransmission"));
+            set_trans_range(offset_pt, j, 0, min_transmission, max_transmission, time_slot);
+        }
+    }
+    
+    return 0;
+}
+
+/**
+ Read the information of the patch in the xml file and saves its information into the invernal variables
+ */
+int read_patch_xml(char *patch_file) {
+    
+    xmlDoc *top_xml;        // Variable that contains the xml document top tree
+    
+    // Open the xml file if it exists
+    top_xml = xmlReadFile(patch_file, NULL, 0);
+    if (top_xml == NULL) {
+        fprintf(stderr, "The given xml file does not exist\n");
+        return -1;
+    }
+    
+    // Read the general information of the patch
+    if (read_general_patch_information_xml(top_xml) == -1) {
+        fprintf(stderr, "The general patch information of the patch could not be read\n");
+        return -1;
+    }
+    
+    // Read the fixed traffic of the patch
+    if (read_patch_fixed_traffix_xml(top_xml) == -1) {
+        fprintf(stderr, "The fixed traffic information of the patch could not be read\n");
+        return -1;
+    }
+    
+    // Read the traffic of the patch
+    if (read_patch_traffic_xml(top_xml) == -1) {
+        fprintf(stderr, "The traffic information of the patch could not be read\n");
+        return -1;
+    }
+    
+    xmlFreeDoc(top_xml);
+    return 0;
+}
+
+/**
+ Read the general optimize information of the network and add its into the Network variables
+ 
+ @param top_xml pointer to general information tree
+ @return 0 if all information was saved correctly, -1 otherwise
+ */
+int read_general_optimize_information_xml(xmlDoc *top_xml) {
+    
+    char* path = "/Optimize/GeneralInformation/LinkID";
+    patched_link = (int)get_value_xml(top_xml, path);
+    
+    // Set the healing protocol
+    path = "/Optimize/GeneralInformation/ProtocolPeriod";
+    long long int protocol_period = get_value_xml(top_xml, path);
+    path = "/Optimize/GeneralInformation/ProtocolTime";
+    long long int protocol_time = get_value_xml(top_xml, path);
+    set_healing_protocol(protocol_period, protocol_time);
+    
+    // Read the hyper period
+    path = "/Optimize/GeneralInformation/HyperPeriod";
+    hyperperiod = get_value_xml(top_xml, path);
+    
+    return 0;
+}
+
+/**
+ Read the fixed traffic information of the optimize
+ 
+ @param top_xml pointer to the top of the tree
+ @return 0 if done correctly, -1 otherwise
+ */
+int read_optimize_fixed_traffix_xml(xmlDoc *top_xml) {
+    
+    // Read the number of frames and allocate the needed memory in the list of frames
+    char *path = "/Optimize/FixedTraffic/Frame";
+    int num_frames = get_occurences_xml(top_xml, path);
+    if (num_frames == 0) {
+        return 0;
+    }
+    num_frames_fixed = num_frames;
+    traffic.num_frames = num_frames;
+    traffic.frames = malloc(sizeof(Frame) * num_frames);
+    traffic.frames_id = malloc(sizeof(int) * num_frames);
+    
+    // For all frames, save its information
+    for (int i = 0; i < num_frames; i++) {
+        
+        // Search and save the frame ID
+        char *value = get_occur_value_xml(top_xml, path, i, "FrameID");
+        if (value == NULL) {
+            fprintf(stderr, "A frameID could not be found\n");
+            return -1;
+        }
+        int frame_id = atoi(value);
+        if (frame_id < 0) {
+            fprintf(stderr, "The frameID should be a natural number\n");
+            return -1;
+        }
+        if (frame_id > higher_frame_id) {
+            higher_frame_id = frame_id;
+        }
+        traffic.frames_id[i] = frame_id;
+        
+        // As there is only one link, there exist only one receiver
+        traffic.frames[i].num_paths = 1;
+        traffic.frames[i].receivers_id = malloc(sizeof(int));
+        traffic.frames[i].list_paths = malloc(sizeof(Path));
+        set_receiver_id(&traffic.frames[i], 0, 1);
+        int path_array[] = {patched_link};
+        set_path_receiver_id(&traffic.frames[i], 1, path_array, 1);
+        
+        // Read the offsets and save the transmission and ending times
+        int num_instances = get_ocurrences_in_ocurrences_xml(top_xml, path, i, "Offset/Instance");
+        init_offset_patch(&traffic.frames[i], num_instances, 0);
+        Offset *offset_pt = get_offset_it(&traffic.frames[i], 0);
+        for (int j = 0; j < num_instances; j++) {
+            long long int trans_time = atoll(get_ocurr_in_ocurr_value_xml(top_xml, path, i, "Offset/Instance", j,
+                                                                          "TransmissionTime"));
+            set_trans_time(offset_pt, j, 0, trans_time);
+        }
+        long long int trans_time = atoll(get_ocurr_in_ocurr_value_xml(top_xml, path, i, "Offset/Instance", 0,
+                                                                      "TransmissionTime"));
+        long long int end_time = atoll(get_ocurr_in_ocurr_value_xml(top_xml, path, i, "Offset/Instance", 0,
+                                                                    "EndingTime"));
+        // Set the time to transmit the frame
+        set_time_offset_it(&traffic.frames[i], 0, (int)(end_time - trans_time));
+    }
+    
+    return 0;
+}
+
+/**
+ Read the traffic information of the optimize to allocate
+ 
+ @param top_xml pointer to the top of the tree
+ @return 0 if done correctly, -1 otherwise
+ */
+int read_optimize_traffic_xml(xmlDoc *top_xml) {
+    
+    // Read the number of frames and allocate the needed memory in the list of frames
+    char *path = "/Optimize/Traffic/Frame";
+    int num_frames = get_occurences_xml(top_xml, path);
+    traffic.num_frames += num_frames;
+    // If there was no number of frames fixed, we have to allocate the traffic
+    if (num_frames_fixed == 0) {
+        traffic.frames = malloc(sizeof(Frame) * num_frames);
+        traffic.frames_id = malloc(sizeof(int) * num_frames);
+    } else {
+        traffic.frames = realloc(traffic.frames, sizeof(Frame) * traffic.num_frames);
+        traffic.frames_id = realloc(traffic.frames_id, sizeof(int) * traffic.num_frames);
+    }
+    
+    // For all frames, save its information
+    for (int i = num_frames_fixed; i < traffic.num_frames; i++) {
+        
+        // Search and save the frame ID
+        char *value = get_occur_value_xml(top_xml, path, i - num_frames_fixed, "FrameID");
+        if (value == NULL) {
+            fprintf(stderr, "A frameID could not be found\n");
+            return -1;
+        }
+        int frame_id = atoi(value);
+        if (frame_id < 0) {
+            fprintf(stderr, "The frameID should be a natural number\n");
+            return -1;
+        }
+        if (frame_id > higher_frame_id) {
+            higher_frame_id = frame_id;
+        }
+        traffic.frames_id[i] = frame_id;
+        
+        // As there is only one link, there exist only one receiver
+        traffic.frames[i].num_paths = 1;
+        traffic.frames[i].receivers_id = malloc(sizeof(int));
+        traffic.frames[i].list_paths = malloc(sizeof(Path));
+        set_receiver_id(&traffic.frames[i], 0, 1);
+        int path_array[] = {patched_link};
+        set_path_receiver_id(&traffic.frames[i], 1, path_array, 1);
+        
+        // Read the offsets and save the transmission ranges and timeslots of the transmission
+        int num_instances = get_ocurrences_in_ocurrences_xml(top_xml, path, i - num_frames_fixed, "Offset/Instance");
+        init_offset_patch(&traffic.frames[i], num_instances, 0);
+        Offset *offset_pt = get_offset_it(&traffic.frames[i], 0);
+        int time_slot = atoi(get_occur_value_xml(top_xml, path, i - num_frames_fixed, "Offset/TimeSlots"));
+        for (int j = 0; j < num_instances; j++) {
+            long long int min_transmission = atoll(get_ocurr_in_ocurr_value_xml(top_xml, path, i - num_frames_fixed,
+                                                                                "Offset/Instance", j,
+                                                                                "MinTransmission"));
+            long long int max_transmission = atoll(get_ocurr_in_ocurr_value_xml(top_xml, path, i - num_frames_fixed,
+                                                                                "Offset/Instance", j,
+                                                                                "MaxTransmission"));
+            set_trans_range(offset_pt, j, 0, min_transmission, max_transmission, time_slot);
+        }
+    }
+    
+    return 0;
+}
+
+/**
+ Read the information of the optimize in the xml file and saves its information into the invernal variables
+ */
+int read_optimize_xml(char *optimize_file) {
+    
+    xmlDoc *top_xml;        // Variable that contains the xml document top tree
+    
+    // Open the xml file if it exists
+    top_xml = xmlReadFile(optimize_file, NULL, 0);
+    if (top_xml == NULL) {
+        fprintf(stderr, "The given xml file does not exist\n");
+        return -1;
+    }
+    
+    // Read the general information of the patch
+    if (read_general_optimize_information_xml(top_xml) == -1) {
+        fprintf(stderr, "The general patch information of the patch could not be read\n");
+        return -1;
+    }
+    
+    // Read the fixed traffic of the patch
+    if (read_optimize_fixed_traffix_xml(top_xml) == -1) {
+        fprintf(stderr, "The fixed traffic information of the patch could not be read\n");
+        return -1;
+    }
+    
+    // Read the traffic of the patch
+    if (read_optimize_traffic_xml(top_xml) == -1) {
+        fprintf(stderr, "The traffic information of the patch could not be read\n");
+        return -1;
+    }
+    
+    xmlFreeDoc(top_xml);
+    return 0;
+}
+
 /* Output Functions */
 
 /**
@@ -1360,6 +1796,61 @@ int write_frame_xml(xmlNode *root_xml, Frame *pt, int frame_id) {
 }
 
 /**
+ Write the information and transmission time of a patched frame
+ 
+ @param root_xml pointer to the root of the frame
+ @param pt pointer to the frame
+ @param frame_id identifier of the frame
+ @return 0 if done correctly, -1 otherwise
+ */
+int write_patched_frame_xml(xmlNode *root_xml, Frame *pt, int frame_id) {
+    
+    char char_value[100];
+    xmlNode *inst_xml, *repl_xml;
+    
+    if (pt == NULL) {
+        fprintf(stderr, "The given pointer to the frame is NULL\n");
+        return -1;
+    }
+    
+    // Write the frame ID
+    sprintf(char_value, "%d", frame_id);
+    xmlNewChild(root_xml, NULL, BAD_CAST "FrameID", BAD_CAST char_value);
+    
+    // In the patch we only need the first offset of the offset it
+    Offset *off_pt = pt->offset_it[0];
+    
+    // For every offset, write the transmission times of all instances and replicas
+    for (int h = 0; h < off_pt->num_instances; h++) {
+        inst_xml = xmlNewChild(root_xml, NULL, BAD_CAST "Instance", NULL);
+        
+        sprintf(char_value, "%d", h);
+        xmlNewChild(inst_xml, NULL, BAD_CAST "NumInstance", BAD_CAST char_value);
+        
+        sprintf(char_value, "%lld", off_pt->offset[h][0]);
+        xmlNewChild(inst_xml, NULL, BAD_CAST "TransmissionTime", BAD_CAST char_value);
+        
+        sprintf(char_value, "%lld", off_pt->offset[h][0] + off_pt->time - 1);
+        xmlNewChild(inst_xml, NULL, BAD_CAST "EndingTime", BAD_CAST char_value);
+        
+        for (int k = 1; k < off_pt->num_replicas; k++) {
+            repl_xml = xmlNewChild(inst_xml, NULL, BAD_CAST "Replica", NULL);
+            
+            sprintf(char_value, "%d", k);
+            xmlNewChild(repl_xml, NULL, BAD_CAST "NumReplica", BAD_CAST char_value);
+            
+            sprintf(char_value, "%lld", off_pt->offset[h][k]);
+            xmlNewChild(repl_xml, NULL, BAD_CAST "TransmissionTime", BAD_CAST char_value);
+            
+            sprintf(char_value, "%lld", off_pt->offset[h][k] + off_pt->time - 1);
+            xmlNewChild(repl_xml, NULL, BAD_CAST "EndingTime", BAD_CAST char_value);
+        }
+    }
+    
+    return 0;
+}
+
+/**
  Write the obtained schedule from all frames into a xml file.
  Start with the general information, such as hyper-period or size of the time slot, then write all the transmission
  times of all frames
@@ -1370,7 +1861,7 @@ int write_schedule_xml(char *schedule_file) {
     xmlDoc *top_xml;
     xmlNode *root_xml, *traffic_xml;
     
-    // Create the top fail
+    // Create the top file
     top_xml = xmlNewDoc(BAD_CAST "1.0");
     root_xml = xmlNewNode(NULL, BAD_CAST "Schedule");
     xmlDocSetRootElement(top_xml, root_xml);
@@ -1390,5 +1881,43 @@ int write_schedule_xml(char *schedule_file) {
     xmlFreeDoc(top_xml);
     xmlCleanupParser();
     
+    return 0;
+}
+
+/**
+ Write the obtained patched schedule for all allocated frames into a xml file.
+ */
+int write_patch_xml(char *patch_file) {
+    
+    // Init xml variables needed to write information in the file
+    xmlDoc *top_xml;
+    xmlNode *root_xml, *general_xml, *traffic_xml;
+    char char_value[100];
+    
+    // Create the top file
+    top_xml = xmlNewDoc(BAD_CAST "1.0");
+    root_xml = xmlNewNode(NULL, BAD_CAST "PatchedSchedule");
+    xmlDocSetRootElement(top_xml, root_xml);
+    
+    // Write the link id of the patch
+    general_xml = xmlNewChild(root_xml, NULL, BAD_CAST "GeneralInformation", NULL);
+    sprintf(char_value, "%d", patched_link);
+    xmlNewChild(general_xml, NULL, BAD_CAST "LinkID", BAD_CAST char_value);
+    
+    // Write all allocated frames information and transmission times
+    traffic_xml = xmlNewChild(root_xml, NULL, BAD_CAST "TrafficInformation", NULL);
+    for (int i = num_frames_fixed; i < traffic.num_frames; i++) {
+        write_patched_frame_xml(xmlNewChild(traffic_xml, NULL, BAD_CAST "Frame", NULL),
+                                &traffic.frames[i], traffic.frames_id[i]);
+    }
+    
+    // Write the file and clean up the variables
+    xmlSaveFormatFileEnc(patch_file, top_xml, "UTF-8", 1);
+    xmlFreeDoc(top_xml);
+    xmlFreeNode(root_xml);
+    xmlFreeNode(general_xml);
+    xmlFreeNode(traffic_xml);
+    xmlCleanupParser();
+        
     return 0;
 }

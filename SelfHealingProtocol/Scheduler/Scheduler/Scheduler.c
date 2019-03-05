@@ -35,6 +35,7 @@ Scheduler algorithm;                // Algorithm used to schedule the network
 double MIPGAP = 0.0;                // MIP GAP limit when to stop searching
 double timelimit;                   // Time limit when to stop executing the solver (in the case of the incremetal
                                     // it is the time limit PER ITERATION)
+LS_Transmission *sorted_trans = NULL;        // Started point of the sorted linked list with the link transmissions
 
 
                                                     /* FUNCTIONS */
@@ -591,9 +592,7 @@ int check_schedule(Frame *frames, int num) {
                                         get_frame_id(i), link_id);
                                 return -1;
                             }
-                            
                         }
-                        
                     }
                 }
             }
@@ -613,15 +612,14 @@ int check_schedule(Frame *frames, int num) {
                                     
                                     long long int trans_time = get_trans_time(off, inst, repl);
                                     long long int pre_trans_time = get_trans_time(pre_off, pre_inst, pre_repl);
-                                    long long int end_time = trans_time + get_off_time(off);
-                                    long long int end_time2 = pre_trans_time + get_off_time(pre_off);
+                                    long long int end_time = trans_time + get_off_time(off) - 1;
+                                    long long int end_time2 = pre_trans_time + get_off_time(pre_off) - 1;
                                     
                                     if ((pre_trans_time < end_time) && (trans_time < end_time2)) {
                                         fprintf(stderr, "The frames %d and %d collide in link %d\n",
                                                 get_frame_id(i), get_frame_id(pre_fr_it), link_id);
                                         return -1;
                                     }
-                                    
                                 }
                             }
                         }
@@ -646,25 +644,204 @@ int check_schedule(Frame *frames, int num) {
                             fprintf(stderr, "The distances of the path of frame %d is wrong\n", get_frame_id(i));
                             return -1;
                         }
-                        
                     }
                 }
             }
-            // Check the first and last liks in the path for the end to end delay constraint
+            // Check the first and last links in the path for the end to end delay constraint
             Offset *off = get_offset_path_link(path_pt, 0);
             Offset *last_off = get_offset_path_link(path_pt, get_num_links_path(path_pt) - 1);
             for (int inst = 0; inst < get_off_num_instances(off); inst++) {
                 for (int repl = 0; repl < get_off_num_replicas(off); repl++) {
                     
-                    long long int distance = get_end_to_end(&frames[i]) - get_off_time(off);
+                    long long int distance = get_end_to_end(&frames[i]) - get_off_time(off) + 1;
                     long long int trans_time = get_trans_time(off, inst, repl);
                     long long int last_trans_time = get_trans_time(last_off, inst, repl);
                     if ((last_trans_time - trans_time) > distance) {
                         fprintf(stderr, "The end to end delay of frame %d is wrong\n", get_frame_id(i));
                         return -1;
                     }
-                    
                 }
+            }
+        }
+    }
+    
+    return 0;
+}
+
+/* Patch functions */
+
+/**
+ Insert a fixed transmission to the list of link transmissions
+
+ @param head head to the link transmissions
+ @param transmission_time starting time transmissions
+ @param ending_time ending time transmission
+ @return the new pointer to the head
+ */
+LS_Transmission* insert_fixed_trans(LS_Transmission *head, long long int transmission_time, long long int ending_time) {
+    
+    LS_Transmission *next_pt, *prev_pt;
+    
+    // Create the transmission block
+    LS_Transmission *trans_pt = malloc(sizeof(LS_Transmission));
+    trans_pt->starting = transmission_time;
+    trans_pt->ending = ending_time;
+    trans_pt->next_transmission = NULL;
+    
+    // If the head is not initialized, do it and add the block
+    if (head == NULL) {
+        head = trans_pt;
+    } else {
+        next_pt = head;
+        prev_pt = NULL;
+        // Search until the starting time is larger
+        while (next_pt && next_pt->starting <= trans_pt->starting) {
+            prev_pt = next_pt;
+            next_pt = next_pt->next_transmission;
+        }
+        // If is the last, add it at the end
+        if (next_pt == NULL) {
+            prev_pt->next_transmission = trans_pt;
+        // If not, it was in the middle, so add it in between
+        } else {
+            if (prev_pt) {
+                trans_pt->next_transmission = prev_pt->next_transmission;
+                prev_pt->next_transmission = trans_pt;
+            } else {
+                trans_pt->next_transmission = head;
+                head = trans_pt;
+            }
+        }
+    }
+    return head;
+}
+
+/**
+ Allocate a new offset in the linked list
+
+ @param off_pt pointer to the offset to allocate
+ @param instance number of instance
+ @param head pointer to the head of the linked list transmission
+ @param min minimum possible transmission time
+ @param max maximum possible transmission time
+ @param time_slots time slots
+ @return the head pointer or null if the offset could not be patched
+ */
+LS_Transmission* allocate_offset_patch(Offset *off_pt, int instance, LS_Transmission *head, long long int min,
+                                       long long int max, int time_slots) {
+    
+    LS_Transmission *next_pt, *prev_pt;
+    int found = 0;
+    
+    // Create the transmission block
+    LS_Transmission *trans_pt = malloc(sizeof(LS_Transmission));
+    trans_pt->starting = min;
+    trans_pt->ending = min + time_slots - 1;
+    trans_pt->next_transmission = NULL;
+    
+    // If the head is not initialized, do it and add the block
+    if (head == NULL) {
+        head = trans_pt;
+    } else {
+        next_pt = head;
+        prev_pt = NULL;
+        // Iterate over all the linked list
+        while (next_pt && found == 0) {
+            
+            // If it fits, add it
+            if (trans_pt->ending < next_pt->starting) {
+                found = 1;
+            // If not, update the transmission times
+            } else {
+                // Update starting time only if is larger than the minimum available
+                if (next_pt-> ending > min) {
+                    trans_pt->starting = next_pt->ending + 1;
+                    trans_pt->ending = trans_pt->starting + time_slots - 1;
+                    // If it goes over the maximum, we could not patch
+                    if (trans_pt->starting > max) {
+                        free(trans_pt);
+                        return NULL;
+                    }
+                }
+                
+                // Prepare pointers for the next iteration
+                prev_pt = next_pt;
+                next_pt = next_pt->next_transmission;
+            }
+        }
+        
+        // If is the last, add it at the end
+        if (next_pt == NULL) {
+            prev_pt->next_transmission = trans_pt;
+            // If not, it was in the middle, so add it in between
+        } else {
+            if (prev_pt) {
+                trans_pt->next_transmission = prev_pt->next_transmission;
+                prev_pt->next_transmission = trans_pt;
+            } else {
+                trans_pt->next_transmission = head;
+                head = trans_pt;
+            }
+        }
+        // Allocate the transmission to the offset
+        set_trans_time(off_pt, instance, 0, trans_pt->starting);
+    }
+    
+    return head;
+}
+
+/**
+ Prepare the fixed traffic and load it into the sorted list of the link transmissions
+
+ @param frames pointer to the frames to fix
+ @param num number of frames to fix
+ @return 0 if done corretly, -1 otherwise
+ */
+int prepare_fixed_traffic(Frame *frames, int num) {
+    
+    // For all the fixed frames, add them into the linked list
+    for (int fr_it = 0; fr_it < num; fr_it++) {
+        // The fixed traffic only has one offset
+        Offset *off_pt = get_offset_it(&frames[fr_it], 0);
+        int time_slots = get_off_time(off_pt);
+        for (int inst = 0; inst < get_off_num_instances(off_pt); inst++) {
+            long long int trans_time = get_trans_time(off_pt, inst, 0);
+            sorted_trans = insert_fixed_trans(sorted_trans, trans_time, trans_time + time_slots);
+        }
+    }
+    
+    // Also add the self healing protocol bandwith reservation
+    SelfHealing_Protocol protocol = *get_healing_protocol();
+    int instances_protocol = (int)(get_hyperperiod() / protocol.period);
+    for (int i = 0; i < instances_protocol; i++) {
+        int trans_time = (int)(protocol.period * i);
+        sorted_trans = insert_fixed_trans(sorted_trans, trans_time, trans_time + protocol.time);
+    }
+    
+    return 0;
+}
+
+/**
+ Allocate the traffic in the available slots left by the dixed offsets
+ 
+ @param frames pointer to the frames to allocate
+ @param num number of frames to fix
+ @return 0 if done corretly, -1 otherwise
+ */
+int allocate_patch_traffic(Frame *frames, int num) {
+    
+    for (int fr_it = 0; fr_it < num; fr_it++) {
+        // The fixed traffic only has one offset
+        Offset *off_pt = get_offset_it(&frames[fr_it], 0);
+        int time_slots = get_off_time(off_pt);
+        for (int inst = 0; inst < get_off_num_instances(off_pt); inst++) {
+            long long int min = get_min_trans_time(off_pt, inst, 0);
+            long long int max = get_max_trans_time(off_pt, inst, 0);
+            sorted_trans = allocate_offset_patch(off_pt, inst, sorted_trans, min, max, time_slots);
+            // If it returns null, we failed to patch
+            if (sorted_trans == NULL) {
+                fprintf(stderr, "A frame could not be patched\n");
+                return -1;
             }
         }
     }
@@ -840,6 +1017,28 @@ int schedule_network(void) {
             return -1;
             break;
     }
+    return 0;
+}
+
+/**
+ Patch the traffic in a fast heuristic
+ */
+int patch(void) {
+    
+    Traffic *t = get_traffic();
+    int fixed_frames = get_num_fixed_frames();
+    
+    // Prepare the fixed traffic
+    if (prepare_fixed_traffic(t->frames, fixed_frames) == -1) {
+        fprintf(stderr, "Error preparing the fixed traffic when patching\n");
+        return -1;
+    }
+    // For all frames, allocate a frame at a time
+    if (allocate_patch_traffic(&t->frames[fixed_frames], t->num_frames - fixed_frames) == -1) {
+        fprintf(stderr, "Error allocating traffic when patching\n");
+        return -1;
+    }
+    
     return 0;
 }
 

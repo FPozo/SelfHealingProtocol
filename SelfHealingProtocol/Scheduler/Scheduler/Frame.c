@@ -260,6 +260,48 @@ long long int get_trans_time(Offset *pt, int instance, int replica) {
 }
 
 /**
+ Get the minimum possible transmission time of the given offset, instance and replica
+ */
+long long int get_min_trans_time(Offset *pt, int instance, int replica) {
+    
+    if (pt == NULL) {
+        fprintf(stderr, "The given offset pointer is NULL\n");
+        return -1;
+    }
+    if (instance >= pt->num_instances || instance < 0) {
+        fprintf(stderr, "The given instance is outside the range of instances\n");
+        return -1;
+    }
+    if (replica >= pt->num_replicas || replica < 0) {
+        fprintf(stderr, "The given replica is outside the range of instances\n");
+        return -1;
+    }
+    
+    return pt->min_offset[instance][replica];
+}
+
+/**
+ Get the maximum possible transmission time of the given offset, instance and replica
+ */
+long long int get_max_trans_time(Offset *pt, int instance, int replica) {
+    
+    if (pt == NULL) {
+        fprintf(stderr, "The given offset pointer is NULL\n");
+        return -1;
+    }
+    if (instance >= pt->num_instances || instance < 0) {
+        fprintf(stderr, "The given instance is outside the range of instances\n");
+        return -1;
+    }
+    if (replica >= pt->num_replicas || replica < 0) {
+        fprintf(stderr, "The given replica is outside the range of instances\n");
+        return -1;
+    }
+    
+    return pt->max_offset[instance][replica];
+}
+
+/**
  Get the number of paths in a link
  */
 int get_num_links_path(Path *pt) {
@@ -541,11 +583,37 @@ int set_trans_time(Offset *pt, int instance, int replica, long long int time) {
         return -1;
     }
     if (replica >= pt->num_replicas || replica < 0) {
-        fprintf(stderr, "The given replica is outside the range of instances\n");
+        fprintf(stderr, "The given replica is outside the range of replicas\n");
         return -1;
     }
     
     pt->offset[instance][replica] = time;
+    return 0;
+}
+
+/**
+ Set the avaiable range of transmission time of an offset
+ */
+int set_trans_range(Offset *pt, int instance, int replica, long long int min_transmission,
+                    long long int max_transmission, int time_slots) {
+    
+    if (pt == NULL) {
+        fprintf(stderr, "The given offset pointer is NULL\n");
+        return -1;
+    }
+    if (instance >= pt->num_instances || instance < 0) {
+        fprintf(stderr, "The given instance is outside the range of instances\n");
+        return -1;
+    }
+    if (replica >= pt->num_replicas || replica < 0) {
+        fprintf(stderr, "The given replica is outside the range of replicas\n");
+        return -1;
+    }
+    
+    pt->time = time_slots;
+    pt->min_offset[instance][replica] = min_transmission;
+    pt->max_offset[instance][replica] = max_transmission;
+    
     return 0;
 }
 
@@ -655,6 +723,44 @@ int init_offset_reservation(Frame *pt, int max_link_id, long long int hyperperio
         pt->num_offsets += 1;
         pt->offset_it = realloc(pt->offset_it, sizeof(Offset*) * pt->num_offsets);
         pt->offset_it[pt->num_offsets - 1] = pt->offset_hash[i];
+    }
+    
+    return 0;
+}
+
+/**
+ For the given frame, init the offset needed to save the information of a frame with a single offset
+ */
+int init_offset_patch(Frame *pt, int instance, int replica) {
+    
+    if (instance <= 0) {
+        fprintf(stderr, "The number of instances should be a positive number\n");
+        return -1;
+    }
+    if (replica < 0) {
+        fprintf(stderr, "The number of replicas should be a natural number\n");
+        return -1;
+    }
+    
+    // Init the offset in the frame
+    pt->num_offsets = 1;
+    pt->offset_it = malloc(sizeof(Offset*));
+    pt->offset_it[0] = malloc(sizeof(Offset));
+    
+    // Allocate the needed information of the offset
+    pt->offset_it[0]->num_instances = instance;
+    pt->offset_it[0]->num_replicas = replica + 1;
+    pt->offset_it[0]->offset = malloc(sizeof(long long int *) * instance);
+    pt->offset_it[0]->min_offset = malloc(sizeof(long long int *) * instance);
+    pt->offset_it[0]->max_offset = malloc(sizeof(long long int *) * instance);
+    pt->offset_it[0]->var_num = malloc(sizeof(int *) * instance);
+    pt->offset_it[0]->var_name = malloc(sizeof(char *) * instance);
+    for (int i = 0; i < instance; i++) {
+        pt->offset_it[0]->offset[i] = malloc(sizeof(long long int) * (replica + 1));
+        pt->offset_it[0]->min_offset[i] = malloc(sizeof(long long int) * (replica + 1));
+        pt->offset_it[0]->max_offset[i] = malloc(sizeof(long long int) * (replica + 1));
+        pt->offset_it[0]->var_num[i] = malloc(sizeof(int) * (replica + 1));
+        pt->offset_it[0]->var_name[i] = malloc(sizeof(char) * (replica + 1));
     }
     
     return 0;

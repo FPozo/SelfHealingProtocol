@@ -14,12 +14,10 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * """
 
 
-from enforce import runtime_validation
 from enum import Enum
 from typing import Union
 
 
-@runtime_validation
 class Node:
     """
     Class with the information of a node in the network

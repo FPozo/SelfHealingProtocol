@@ -16,7 +16,6 @@
  *                                                                                                                     *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * """
 
-from enforce import runtime_validation
 from random import choice, shuffle, randint
 from copy import copy
 import xml.etree.ElementTree as Xml
@@ -26,10 +25,9 @@ from enum import Enum
 from typing import NamedTuple, List, Tuple, Dict
 from Node import Node
 from Link import Link
-from Frame import Frame
+from Frame import Frame, Offset
 
 
-@runtime_validation
 class Network:
     """
     Network class with the information of the whole network, frames and dependencies that contains.
@@ -200,7 +198,13 @@ class Network:
         self.__num_frames = 0  # Number of frames in the network
         self.__traffic_information = None  # Traffic information to generate traffic
         self.__frame_description = []  # List of different frame descriptions
-        self.__frames = {}  # List of frame objects
+        self.__frames: Dict[int, Frame] = {}  # List of frame objects
+        self.__num_links = 0    # Number of links in the network
+        self.__num_nodes = 0    # Number of nodes in the network
+        self.__time_slot_size = 0    # Size of the time slot
+        self.__hyper_period = 0      # Hyper period of the schedule
+        self.__utilization = 0          # Utilization of the network
+        self.__link_utilization = {}    # Utilization of every link in the network
 
     # Getters #
 
@@ -255,6 +259,62 @@ class Network:
     @property
     def frames(self) -> Dict[int, Frame]:
         return self.__frames
+
+    @property
+    def num_links(self) -> int:
+        """
+        Get the number of links in the network
+        :return: number of links
+        """
+        return self.__num_links
+
+    @property
+    def num_nodes(self) -> int:
+        """
+        Get the number of nodes in the network
+        :return: number of nodes
+        """
+        return self.__num_nodes
+
+    @property
+    def time_slot_size(self) -> int:
+        """
+        Get the time slot size
+        :return: time slot size
+        """
+        return self.__time_slot_size
+
+    @property
+    def hyper_period(self) -> int:
+        """
+        Get the hyper period
+        :return: hyper period
+        """
+        return self.__hyper_period
+
+    @property
+    def link_utilization(self) -> Dict[int, float]:
+        """
+        Get the utilization of the given link
+        :return: utilization of the link
+        """
+        return self.__link_utilization
+
+    @property
+    def utilization(self) -> float:
+        """
+        Get the overall network utilization
+        :return: network utilization
+        """
+        return self.__utilization
+
+    @property
+    def nodes_id(self) -> List[int]:
+        """
+        Get all the nodes ids
+        :return: a list with all nodes ids
+        """
+        return list(self.__graph.nodes)
 
     # Setters #
 
@@ -343,6 +403,57 @@ class Network:
             raise ValueError('The total number of frames in the frame description should be the same as the number '
                              'of frames in the network')
         self.__frame_description = value
+
+    @num_links.setter
+    def num_links(self, value: int) -> None:
+        """
+        Set the number of links
+        :param value: number of links
+        :return: nothing
+        """
+        if value <= 0:
+            raise ValueError('The number of links should be a positive number')
+
+        self.__num_links = value
+
+    @num_nodes.setter
+    def num_nodes(self, value: int) -> None:
+        """
+        Set the number of nodes in the network
+        :param value: number of nodes
+        :return: nothing
+        """
+        if value <= 0:
+            raise ValueError('The number of nodes should be a positive number')
+
+        if value != len(self.topology_description.description) and self.topology_description is not None:
+            raise ValueError('The number of nodes does not match the topology description')
+
+        self.__num_nodes = value
+
+    @time_slot_size.setter
+    def time_slot_size(self, value: int) -> None:
+        """
+        Set the time slot size of the network schedule
+        :param value: time slot time
+        :return: nothing
+        """
+        if value <= 0:
+            raise ValueError('The time slot size should be a natural number')
+
+        self.__time_slot_size = value
+
+    @hyper_period.setter
+    def hyper_period(self, value: int) -> None:
+        """
+        Set the hyper period size of the network schedule
+        :param value: hyper period time size
+        :return: nothing
+        """
+        if value <= 0:
+            raise ValueError('The hyper period time size should be a natural number')
+
+        self.__hyper_period = value
 
     # Network Functions #
 
@@ -546,6 +657,242 @@ class Network:
                 # Save the obtained path into the frame
                 frame.set_path(receiver, link_path)
 
+    def get_receiver_id_link(self, link_id: int) -> int:
+        """
+        Get the receiver node identifier given a link identifier
+        :param link_id: link identifier
+        :return: receiver node identifier
+        """
+        # For all the out connections, if the link id matches the given link id, return the receiver node id
+        for _, receiver_id, link_data in self.__graph.out_edges(data=True):
+            if link_data['id'] == link_id:
+                return receiver_id
+        raise ValueError('The given link id does not have a receiver node')
+
+    def get_sender_id_link(self, link_id: int) -> int:
+        """
+        Get the sender node identifier given a link identifier
+        :param link_id: link identifier
+        :return: sender node identifier
+        """
+        # For all the out connections, if the link id matches the given link id, return the sender node id
+        for sender_id, _, link_data in self.__graph.out_edges(data=True):
+            if link_data['id'] == link_id:
+                return sender_id
+        raise ValueError('The given link id does not have a sender node')
+
+    def get_neighbors_ids_by_node(self, node_id: int) -> List[int]:
+        """
+        Get all the nodes ids of the neighbors the given node id can communicate
+        :param node_id: given node id
+        :return: list of all nodes the given node can communicate to directly
+        """
+        return [receiver_id[1] for receiver_id in self.__graph.out_edges(node_id)]
+
+    def get_link_data(self, sender_id: int, receiver_id: int) -> Tuple[Link, int]:
+        """
+        Get the link data as the link object and its id given the sender and receiver
+        :param sender_id: node sender id
+        :param receiver_id: node receiver id
+        :return: link data and link id
+        """
+        link = self.__graph.get_edge_data(sender_id, receiver_id)
+        return link['link'], link['id']
+
+    def get_link(self, link_id: int) -> Link:
+        """
+        Get the link object by the link id
+        :param link_id: link identifier
+        :return: link object
+        """
+        # For all the out connections, if the link id matches the given link id, return the link
+        for _, _, link_data in self.__graph.out_edges(data=True):
+            if link_data['id'] == link_id:
+                return link_data['link']
+        raise ValueError('The given link id does not have a sender node')
+
+    def remove_link(self, link_id: int) -> None:
+        """
+        Remove the given link id from the network
+        :param link_id: link identifier to remove
+        :return: nothing
+        """
+        # For all the connections, if the link id matches the given link id, remove it
+        for sender_id, receiver_id, link_data in self.__graph.out_edges(data=True):
+            if link_data['id'] == link_id:
+                self.__graph.remove_edge(sender_id, receiver_id)
+                return
+        raise ValueError('The given link id was not found')
+
+    def get_shortest_path(self, sender_id: int, receiver_id: int):
+        """
+        Get the shortest path from the sender to the receiver id
+        :param sender_id: sender id identifier
+        :param receiver_id: receiver id identifier
+        :return:
+        """
+        return networkx.shortest_path(self.__graph, sender_id, receiver_id)
+
+    def get_offsets_by_link(self, link_id: int) -> List[Tuple[int, Frame, Offset]]:
+        """
+        Given a link id, return all frames with its frame id that have a transmission in the given link id, also return
+        the offset of such link transmission
+        :param link_id: given link identifier
+        :return: a list of tuple with the frame id, the frame object and the offset object for the given link identifier
+        """
+        return_value: List[Tuple[int, Frame, Offset]] = []
+        for frame_id, frame in self.__frames.items():
+            offset = frame.get_offset_by_link(link_id)
+            if offset is not None:
+                return_value.append((frame_id, frame, offset))
+        return return_value
+
+    def get_available_transmission_range(self, frame: Frame, offset: Offset, link_id: int,
+                                         last_link_new_path: int) -> List[List[int]]:
+
+        range_transmission: List[List[int]] = []
+        for _ in range(offset.num_instances):
+            range_transmission.append([0, self.__hyper_period])
+
+        # For all receivers, check the paths to see which range is more constrained
+        for receiver in frame.receivers_id:
+            path = frame.get_path(receiver)
+
+            # If the path contains the given link, start checking
+            if link_id in path:
+
+                for instance in range(offset.num_instances):
+                    temp_range: List[int] = [0, 0]
+
+                    # If is the first link in the path, it can start from the start
+                    if link_id == path[0]:
+                        temp_range[0] = frame.period * instance
+                        # We get the transmission time of the next link in the path
+                        temp_range[1] = frame.get_offset_by_link(path[1]).get_transmission_time(instance, 0)
+                        temp_range[1] -= self.minimum_switch_time
+
+                    # If is the last link of the path, it can end at the end
+                    if link_id == path[-1]:
+                        temp_range[0] = frame.get_offset_by_link(path[-2]).get_ending_time(instance, 0)
+                        temp_range[0] += self.minimum_switch_time
+
+                        # Check if the maximum possible range is limited by the end to end delay or the deadline
+                        if (frame.get_offset_by_link(path[0]).get_transmission_time(instance, 0) + frame.end_to_end) < \
+                                (frame.deadline + (frame.period * instance)):
+                            temp_range[1] = frame.get_offset_by_link(path[0]).get_transmission_time(instance, 0)
+                            temp_range[1] += frame.end_to_end
+                        else:
+                            temp_range[1] = frame.deadline + (frame.period + instance)
+
+                    # If the link is between the path
+                    else:
+                        p_id = path.index(link_id)
+                        temp_range[0] = frame.get_offset_by_link(path[p_id - 1]).get_ending_time(instance, 0)
+                        temp_range[0] += self.minimum_switch_time
+
+                        temp_range[1] = frame.get_offset_by_link(path[p_id + 1]).get_transmission_time(instance, 0)
+                        temp_range[1] -= self.minimum_switch_time
+
+                    # Take into account also the time to transmit in the last link of the new path
+                    temp_range[1] -= int(frame.size * 1000 / self.get_link(last_link_new_path).speed)
+
+                    # Check if the obtained range is the most constrained, if it is, change it
+                    if range_transmission[instance][0] < temp_range[0]:
+                        range_transmission[instance][0] = temp_range[0]
+                    if range_transmission[instance][1] > temp_range[1]:
+                        range_transmission[instance][1] = temp_range[1]
+
+        # Adapt to the timeslot size
+        for instance in range(offset.num_instances):
+            range_transmission[instance][0] = int(range_transmission[instance][0] / self.time_slot_size)
+            range_transmission[instance][1] = int(range_transmission[instance][1] / self.time_slot_size)
+
+        return range_transmission
+
+    def check_schedule(self) -> None:
+        """
+        Check if the schedule stored for the network is correct
+        :return: nothing
+        """
+        # For all frames check their constraints
+        checked_frames: List[int] = []         # List of frames ids that have been checked in the loop
+        for frame_id, frame in self.frames.items():
+
+            checked_frames.append(frame_id)
+            # Check if the transmission times are between their limits
+            for link_id, offset in frame.offsets.items():
+                for instance in range(offset.num_instances):
+                    transmission_time = offset.get_transmission_time(instance, 0)
+                    ending_time = offset.get_ending_time(instance, 0)
+                    lb = (frame.period * instance) + frame.starting_time
+                    ub = (frame.period * instance) + frame.deadline - (ending_time - transmission_time)
+
+                    if transmission_time < lb:
+                        raise ValueError('The transmission time of frame ' + str(frame_id) + ' of link ' + str(link_id)
+                                         + ' is smaller than should be')
+                    if transmission_time > ub:
+                        raise ValueError('The transmission time of frame ' + str(frame_id) + ' of link ' + str(link_id)
+                                         + ' is larger than should be')
+
+                    # Also check if the frame collides with the bandwidth allocation protocol
+                    if self.healing_protocol.period != 0:
+                        protocol_num_instances = int(self.__hyper_period / self.healing_protocol.period)
+                        for protocol_instance in range(protocol_num_instances):
+                            protocol_transmission_time = self.healing_protocol.period * protocol_instance
+                            protocol_ending_time = protocol_transmission_time + self.healing_protocol.time
+
+                            if (protocol_transmission_time < ending_time) and \
+                                    (transmission_time < protocol_ending_time):
+                                raise ValueError(' The frame ' + str(frame_id) + ' collides with the protocol in link '
+                                                 + str(link_id))
+
+                    # Check if the transmission in the same link of different frames collides
+                    for pre_frame_id in checked_frames[:-1]:
+                        pre_frame = self.frames[pre_frame_id]
+
+                        for pre_link_id, pre_offset in pre_frame.offsets.items():
+                            # Only check if both offsets links are the same
+                            if link_id == pre_link_id:
+                                for pre_instance in range(pre_offset.num_instances):
+                                    pre_transmission_time = pre_offset.get_transmission_time(instance, 0)
+                                    pre_ending_time = pre_offset.get_ending_time(instance, 0)
+
+                                    if (pre_transmission_time < ending_time) and (transmission_time < pre_ending_time):
+                                        raise ValueError(' The frame ' + str(frame_id) + ' and ' + str(pre_frame_id) +
+                                                         ' collide in link ' + str(link_id))
+
+            # Check if the paths are correctly followed and the end to end delay is satisfied
+            for receiver_id in frame.receivers_id:
+                path = frame.get_path(receiver_id)
+                for link_path_it in range(len(path) - 1):
+
+                    offset = frame.get_offset_by_link(path[link_path_it])
+                    next_offset = frame.get_offset_by_link(path[link_path_it + 1])
+
+                    for instance in range(offset.num_instances):
+
+                        distance = offset.get_ending_time(instance, 0) - offset.get_transmission_time(instance, 0)
+                        distance += self.minimum_switch_time
+                        next_transmission_time = next_offset.get_transmission_time(instance, 0)
+                        transmission_time = offset.get_transmission_time(instance, 0)
+
+                        if (next_transmission_time - transmission_time) <= distance:
+                            raise ValueError('The distances of the path of frame ' + str(frame_id) + ' is wrong')
+
+                # Check the first and last links in the path for the end to end delay constraint
+                offset = frame.get_offset_by_link(path[0])
+                last_offset = frame.get_offset_by_link(path[-1])
+
+                for instance in range(offset.num_instances):
+
+                    distance = frame.end_to_end + 1
+                    distance -= (offset.get_ending_time(instance, 0) - offset.get_transmission_time(instance, 0))
+                    transmission_time = offset.get_transmission_time(instance, 0)
+                    last_transmission_time = last_offset.get_transmission_time(instance, 0)
+
+                    if (last_transmission_time - transmission_time) > distance:
+                        raise ValueError('The end to end delay of frame ' + str(frame_id) + ' is wrong')
+
     # Input Functions #
 
     def read_network_xml(self, configuration_file: str) -> None:
@@ -559,13 +906,17 @@ class Network:
         root_xml = Xml.parse(configuration_file).getroot()
         network_xml = root_xml.find('Network')
         # If the xml file is a network and not a configuration, change the pointer
+        create_top = False
         if network_xml is None:
+            create_top = True       # Create the topology if is a network and not a configuration
             network_xml = root_xml
 
         # Position and read all different trees of the network configuration
         self.__read_general_information_xml(network_xml.find('GeneralInformation'))
         self.__topology_description = self.__read_topology_xml(network_xml.find('TopologyInformation'))
         self.__read_traffic(network_xml.find('TrafficDescription'))
+        if create_top:
+            self.__create_topology()
 
     def __read_general_information_xml(self, general_info_xml: Xml.Element) -> None:
         """
@@ -739,7 +1090,70 @@ class Network:
             # Add also all the paths for each receiver
             for key, link_path in paths.items():
                 self.frames[frame_id].set_path(key, link_path)
-        print('hello')
+
+    def read_schedule_xml(self, schedule_file: str) -> None:
+        """
+        Read the schedule and save the transmission times
+        :param schedule_file: name and path of the schedule file
+        :return: nothing
+        """
+        # Open the xml file and get to the root
+        root_xml: Xml.Element = Xml.parse(schedule_file).getroot()
+
+        # Position and read the general information of the schedule and the traffic transmission times
+        self.__read_schedule_general_information_xml(root_xml.find('GeneralInformation'))
+        self.__read_scheduled_traffic_xml(root_xml.find('TrafficInformation'))
+
+    def __read_schedule_general_information_xml(self, general_info_xml: Xml.Element) -> None:
+        """
+        Read the schedule general information and save it
+        :param general_info_xml: pointer to the schedule general information in the tree
+        :return: nothing
+        """
+        self.num_nodes = int(general_info_xml.find('NumberNodes').text)
+        self.num_links = int(general_info_xml.find('NumberLinks').text)
+        time_slot_xml: Xml.Element = general_info_xml.find('TimeslotSize')
+        self.time_slot_size = self.TimeUnit.convert_ns(int(time_slot_xml.text), time_slot_xml.attrib['unit'])
+        self.hyper_period = int(general_info_xml.find('HyperPeriod').text) * self.time_slot_size
+
+    def __read_scheduled_traffic_xml(self, traffic_xml: Xml.Element) -> None:
+        """
+        Read the scheduled traffic and save it
+        :param traffic_xml: pointer to the scheduled traffic in the tree
+        :return: nothing
+        """
+        # Read all frames in the schedule
+        for frame_xml in traffic_xml.findall('Frame'):  # type: Xml.Element
+            frame_id = int(frame_xml.find('FrameID').text)
+            added_links = []    # Auxiliary added links to not double add link utilization
+
+            # Read all the paths of the frame to check the transmissions of the each link
+            for path_it, path_xml in enumerate(frame_xml.findall('Path')):  # type: int, Xml.Element
+                for link_xml in path_xml.findall('Link'):   # type: Xml.Element
+                    link_id = int(link_xml.find('LinkID').text)
+
+                    # Check if the utilization should be taken into account
+                    add_ut = False
+                    if link_id not in added_links:
+                        added_links.append(link_id)
+                        add_ut = True
+                    if link_id not in self.__link_utilization.keys():
+                        self.__link_utilization[link_id] = 0.0
+
+                    # Read all instances and replicas
+                    all_instances_xml: List[Xml.Element] = link_xml.findall('Instance')
+                    self.frames[frame_id].prepare_link_offset(link_id, len(all_instances_xml), 0)
+                    for instance_it, instance_xml in enumerate(all_instances_xml):   # type: int, Xml.Element
+
+                        start_time = int(instance_xml.find('TransmissionTime').text) * self.time_slot_size
+                        self.frames[frame_id].set_offset_transmission_time(link_id, instance_it, 0, start_time)
+                        end_time = int(instance_xml.find('EndingTime').text) * self.time_slot_size
+                        self.frames[frame_id].set_offset_ending_time(link_id, instance_it, 0, end_time)
+
+                        # Add the transmission to the utilization
+                        if add_ut:
+                            self.__link_utilization[link_id] += float(end_time - start_time) / self.__hyper_period
+                            self.__utilization += float(end_time - start_time) / self.__hyper_period / self.__num_links
 
     # Output Functions #
 

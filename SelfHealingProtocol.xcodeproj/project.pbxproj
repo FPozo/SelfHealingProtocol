@@ -7,6 +7,14 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		6025E76C222DF8D800BFAF4E /* Network.c in Sources */ = {isa = PBXBuildFile; fileRef = 604ED62B21FF31A5003F527C /* Network.c */; };
+		6025E76D222DF8D800BFAF4E /* Scheduler.c in Sources */ = {isa = PBXBuildFile; fileRef = 60504367220C350F00C8C349 /* Scheduler.c */; };
+		6025E76E222DF8D800BFAF4E /* Node.c in Sources */ = {isa = PBXBuildFile; fileRef = 604ED63122004FED003F527C /* Node.c */; };
+		6025E76F222DF8D800BFAF4E /* Frame.c in Sources */ = {isa = PBXBuildFile; fileRef = 604ED634220094D8003F527C /* Frame.c */; };
+		6025E770222DF8D800BFAF4E /* Link.c in Sources */ = {isa = PBXBuildFile; fileRef = 604ED62E22004B5D003F527C /* Link.c */; };
+		6025E772222DF8D800BFAF4E /* libgurobi_g++4.2.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 60504364220B1BB700C8C349 /* libgurobi_g++4.2.a */; };
+		6025E773222DF8D800BFAF4E /* libgurobi81.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 60504362220B1B4400C8C349 /* libgurobi81.dylib */; };
+		6025E779222DF8ED00BFAF4E /* optimize.c in Sources */ = {isa = PBXBuildFile; fileRef = 6025E767222DF8B900BFAF4E /* optimize.c */; };
 		604ED62C21FF31A5003F527C /* Network.c in Sources */ = {isa = PBXBuildFile; fileRef = 604ED62B21FF31A5003F527C /* Network.c */; };
 		604ED62F22004B5D003F527C /* Link.c in Sources */ = {isa = PBXBuildFile; fileRef = 604ED62E22004B5D003F527C /* Link.c */; };
 		604ED63222004FED003F527C /* Node.c in Sources */ = {isa = PBXBuildFile; fileRef = 604ED63122004FED003F527C /* Node.c */; };
@@ -15,10 +23,36 @@
 		60504365220B1BB700C8C349 /* libgurobi_g++4.2.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 60504364220B1BB700C8C349 /* libgurobi_g++4.2.a */; };
 		60504368220C350F00C8C349 /* Scheduler.c in Sources */ = {isa = PBXBuildFile; fileRef = 60504367220C350F00C8C349 /* Scheduler.c */; };
 		6085E51B21A40F0C00F13E7B /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 6085E51A21A40F0C00F13E7B /* main.c */; };
+		60E48AD42228212E0017E0E5 /* Network.c in Sources */ = {isa = PBXBuildFile; fileRef = 604ED62B21FF31A5003F527C /* Network.c */; };
+		60E48AD52228212E0017E0E5 /* Scheduler.c in Sources */ = {isa = PBXBuildFile; fileRef = 60504367220C350F00C8C349 /* Scheduler.c */; };
+		60E48AD62228212E0017E0E5 /* Node.c in Sources */ = {isa = PBXBuildFile; fileRef = 604ED63122004FED003F527C /* Node.c */; };
+		60E48AD82228212E0017E0E5 /* Frame.c in Sources */ = {isa = PBXBuildFile; fileRef = 604ED634220094D8003F527C /* Frame.c */; };
+		60E48AD92228212E0017E0E5 /* Link.c in Sources */ = {isa = PBXBuildFile; fileRef = 604ED62E22004B5D003F527C /* Link.c */; };
+		60E48ADB2228212E0017E0E5 /* libgurobi_g++4.2.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 60504364220B1BB700C8C349 /* libgurobi_g++4.2.a */; };
+		60E48ADC2228212E0017E0E5 /* libgurobi81.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 60504362220B1B4400C8C349 /* libgurobi81.dylib */; };
+		60E48AE2222821480017E0E5 /* patch.c in Sources */ = {isa = PBXBuildFile; fileRef = 60E48ABD22281CD50017E0E5 /* patch.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		6025E774222DF8D800BFAF4E /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
 		6085E51521A40F0C00F13E7B /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		60E48ADD2228212E0017E0E5 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = /usr/share/man/man1/;
@@ -30,6 +64,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		6025E767222DF8B900BFAF4E /* optimize.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = optimize.c; sourceTree = "<group>"; };
+		6025E778222DF8D800BFAF4E /* Optimize */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Optimize; sourceTree = BUILT_PRODUCTS_DIR; };
 		604ED62A21FF31A5003F527C /* Network.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Network.h; sourceTree = "<group>"; };
 		604ED62B21FF31A5003F527C /* Network.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = Network.c; sourceTree = "<group>"; };
 		604ED62D22004B5D003F527C /* Link.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Link.h; sourceTree = "<group>"; };
@@ -46,18 +82,39 @@
 		606ED9B821F777910081802B /* Files */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Files; sourceTree = "<group>"; };
 		6085E51721A40F0C00F13E7B /* SelfHealingProtocol */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = SelfHealingProtocol; sourceTree = BUILT_PRODUCTS_DIR; };
 		6085E51A21A40F0C00F13E7B /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
-		6085E53521A414A900F13E7B /* main.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = main.py; sourceTree = "<group>"; };
 		6085E53621A414EB00F13E7B /* main.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = main.py; sourceTree = "<group>"; };
-		6085E53721A414FE00F13E7B /* main.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = main.py; sourceTree = "<group>"; };
+		609FFA81221C54330009CCC5 /* Simulator */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Simulator; sourceTree = "<group>"; };
+		60E48ABB22281CAB0017E0E5 /* TestingSimulator.py */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.python; path = TestingSimulator.py; sourceTree = "<group>"; };
+		60E48ABC22281CB30017E0E5 /* TestingNetworkGenerator.py */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.python; path = TestingNetworkGenerator.py; sourceTree = "<group>"; };
+		60E48ABD22281CD50017E0E5 /* patch.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = patch.c; sourceTree = "<group>"; };
+		60E48AE12228212E0017E0E5 /* Patch */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Patch; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		6025E771222DF8D800BFAF4E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6025E772222DF8D800BFAF4E /* libgurobi_g++4.2.a in Frameworks */,
+				6025E773222DF8D800BFAF4E /* libgurobi81.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		6085E51421A40F0C00F13E7B /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				60504365220B1BB700C8C349 /* libgurobi_g++4.2.a in Frameworks */,
 				60504363220B1B4400C8C349 /* libgurobi81.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		60E48ADA2228212E0017E0E5 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				60E48ADB2228212E0017E0E5 /* libgurobi_g++4.2.a in Frameworks */,
+				60E48ADC2228212E0017E0E5 /* libgurobi81.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -103,6 +160,8 @@
 			isa = PBXGroup;
 			children = (
 				6085E51721A40F0C00F13E7B /* SelfHealingProtocol */,
+				60E48AE12228212E0017E0E5 /* Patch */,
+				6025E778222DF8D800BFAF4E /* Optimize */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -124,6 +183,8 @@
 			children = (
 				6085E51A21A40F0C00F13E7B /* main.c */,
 				604ED62921FF3153003F527C /* Scheduler */,
+				60E48ABD22281CD50017E0E5 /* patch.c */,
+				6025E767222DF8B900BFAF4E /* optimize.c */,
 			);
 			path = Scheduler;
 			sourceTree = "<group>";
@@ -131,8 +192,8 @@
 		6085E53121A4142800F13E7B /* NetworkGenerator */ = {
 			isa = PBXGroup;
 			children = (
+				60E48ABC22281CB30017E0E5 /* TestingNetworkGenerator.py */,
 				606ED9B321D237560081802B /* NetworkGenerator */,
-				6085E53521A414A900F13E7B /* main.py */,
 			);
 			path = NetworkGenerator;
 			sourceTree = "<group>";
@@ -148,7 +209,8 @@
 		6085E53321A4144F00F13E7B /* Simulator */ = {
 			isa = PBXGroup;
 			children = (
-				6085E53721A414FE00F13E7B /* main.py */,
+				60E48ABB22281CAB0017E0E5 /* TestingSimulator.py */,
+				609FFA81221C54330009CCC5 /* Simulator */,
 			);
 			path = Simulator;
 			sourceTree = "<group>";
@@ -156,6 +218,23 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		6025E769222DF8D800BFAF4E /* Optimize */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6025E775222DF8D800BFAF4E /* Build configuration list for PBXNativeTarget "Optimize" */;
+			buildPhases = (
+				6025E76A222DF8D800BFAF4E /* Sources */,
+				6025E771222DF8D800BFAF4E /* Frameworks */,
+				6025E774222DF8D800BFAF4E /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Optimize;
+			productName = SelfHealingProtocol;
+			productReference = 6025E778222DF8D800BFAF4E /* Optimize */;
+			productType = "com.apple.product-type.tool";
+		};
 		6085E51621A40F0C00F13E7B /* SelfHealingProtocol */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 6085E51E21A40F0C00F13E7B /* Build configuration list for PBXNativeTarget "SelfHealingProtocol" */;
@@ -171,6 +250,23 @@
 			name = SelfHealingProtocol;
 			productName = SelfHealingProtocol;
 			productReference = 6085E51721A40F0C00F13E7B /* SelfHealingProtocol */;
+			productType = "com.apple.product-type.tool";
+		};
+		60E48AD22228212E0017E0E5 /* Patch */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 60E48ADE2228212E0017E0E5 /* Build configuration list for PBXNativeTarget "Patch" */;
+			buildPhases = (
+				60E48AD32228212E0017E0E5 /* Sources */,
+				60E48ADA2228212E0017E0E5 /* Frameworks */,
+				60E48ADD2228212E0017E0E5 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Patch;
+			productName = SelfHealingProtocol;
+			productReference = 60E48AE12228212E0017E0E5 /* Patch */;
 			productType = "com.apple.product-type.tool";
 		};
 /* End PBXNativeTarget section */
@@ -200,11 +296,26 @@
 			projectRoot = "";
 			targets = (
 				6085E51621A40F0C00F13E7B /* SelfHealingProtocol */,
+				60E48AD22228212E0017E0E5 /* Patch */,
+				6025E769222DF8D800BFAF4E /* Optimize */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXSourcesBuildPhase section */
+		6025E76A222DF8D800BFAF4E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6025E779222DF8ED00BFAF4E /* optimize.c in Sources */,
+				6025E76C222DF8D800BFAF4E /* Network.c in Sources */,
+				6025E76D222DF8D800BFAF4E /* Scheduler.c in Sources */,
+				6025E76E222DF8D800BFAF4E /* Node.c in Sources */,
+				6025E76F222DF8D800BFAF4E /* Frame.c in Sources */,
+				6025E770222DF8D800BFAF4E /* Link.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		6085E51321A40F0C00F13E7B /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -218,9 +329,58 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		60E48AD32228212E0017E0E5 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				60E48AE2222821480017E0E5 /* patch.c in Sources */,
+				60E48AD42228212E0017E0E5 /* Network.c in Sources */,
+				60E48AD52228212E0017E0E5 /* Scheduler.c in Sources */,
+				60E48AD62228212E0017E0E5 /* Node.c in Sources */,
+				60E48AD82228212E0017E0E5 /* Frame.c in Sources */,
+				60E48AD92228212E0017E0E5 /* Link.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
+		6025E776222DF8D800BFAF4E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = H6335V3A36;
+				HEADER_SEARCH_PATHS = (
+					/usr/include/libxml2,
+					/Library/gurobi810/mac64/include,
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(LOCAL_LIBRARY_DIR)/gurobi810/mac64/lib",
+				);
+				OTHER_LDFLAGS = "-lxml2";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		6025E777222DF8D800BFAF4E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = H6335V3A36;
+				HEADER_SEARCH_PATHS = (
+					/usr/include/libxml2,
+					/Library/gurobi810/mac64/include,
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(LOCAL_LIBRARY_DIR)/gurobi810/mac64/lib",
+				);
+				OTHER_LDFLAGS = "-lxml2";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 		6085E51C21A40F0C00F13E7B /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -368,9 +528,54 @@
 			};
 			name = Release;
 		};
+		60E48ADF2228212E0017E0E5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = H6335V3A36;
+				HEADER_SEARCH_PATHS = (
+					/usr/include/libxml2,
+					/Library/gurobi810/mac64/include,
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(LOCAL_LIBRARY_DIR)/gurobi810/mac64/lib",
+				);
+				OTHER_LDFLAGS = "-lxml2";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		60E48AE02228212E0017E0E5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = H6335V3A36;
+				HEADER_SEARCH_PATHS = (
+					/usr/include/libxml2,
+					/Library/gurobi810/mac64/include,
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(LOCAL_LIBRARY_DIR)/gurobi810/mac64/lib",
+				);
+				OTHER_LDFLAGS = "-lxml2";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		6025E775222DF8D800BFAF4E /* Build configuration list for PBXNativeTarget "Optimize" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6025E776222DF8D800BFAF4E /* Debug */,
+				6025E777222DF8D800BFAF4E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		6085E51221A40F0C00F13E7B /* Build configuration list for PBXProject "SelfHealingProtocol" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -385,6 +590,15 @@
 			buildConfigurations = (
 				6085E51F21A40F0C00F13E7B /* Debug */,
 				6085E52021A40F0C00F13E7B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		60E48ADE2228212E0017E0E5 /* Build configuration list for PBXNativeTarget "Patch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				60E48ADF2228212E0017E0E5 /* Debug */,
+				60E48AE02228212E0017E0E5 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

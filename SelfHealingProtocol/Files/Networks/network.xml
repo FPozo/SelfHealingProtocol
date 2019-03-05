@@ -36,6 +36,13 @@
                     <Speed unit="MBs">100</Speed>
                 </Link>
             </Connection>
+            <Connection>
+                <NodeID>3</NodeID>
+                <Link category="Wired">
+                    <LinkID>6</LinkID>
+                    <Speed unit="MBs">100</Speed>
+                </Link>
+            </Connection>
         </Node>
         <Node category="Switch">
             <NodeID>2</NodeID>
@@ -63,6 +70,13 @@
                     <Speed unit="MBs">100</Speed>
                 </Link>
             </Connection>
+            <Connection>
+                <NodeID>1</NodeID>
+                <Link category="Wired">
+                    <LinkID>7</LinkID>
+                    <Speed unit="MBs">100</Speed>
+                </Link>
+            </Connection>
         </Node>
     </TopologyInformation>
     <TrafficDescription method="specified">
@@ -73,11 +87,11 @@
             <Size unit="Byte">1000</Size>
             <StartingTime unit="ns">0</StartingTime>
             <EndToEnd unit="ns">200000</EndToEnd>
-            <SenderID>3</SenderID>
+            <SenderID>5</SenderID>
             <Paths>
                 <Receiver>
-                    <ReceiverID>5</ReceiverID>
-                    <Path>5;3;1</Path>
+                    <ReceiverID>3</ReceiverID>
+                    <Path>0;6</Path>
                 </Receiver>
             </Paths>
         </Frame>
@@ -92,7 +106,7 @@
             <Paths>
                 <Receiver>
                     <ReceiverID>5</ReceiverID>
-                    <Path>5;3;1</Path>
+                    <Path>7;1</Path>
                 </Receiver>
             </Paths>
         </Frame>
@@ -107,7 +121,7 @@
             <Paths>
                 <Receiver>
                     <ReceiverID>5</ReceiverID>
-                    <Path>5;3;1</Path>
+                    <Path>7;1</Path>
                 </Receiver>
             </Paths>
         </Frame>
@@ -122,7 +136,7 @@
             <Paths>
                 <Receiver>
                     <ReceiverID>3</ReceiverID>
-                    <Path>0;2;4</Path>
+                    <Path>0;6</Path>
                 </Receiver>
             </Paths>
         </Frame>
@@ -137,7 +151,7 @@
             <Paths>
                 <Receiver>
                     <ReceiverID>3</ReceiverID>
-                    <Path>0;2;4</Path>
+                    <Path>0;6</Path>
                 </Receiver>
             </Paths>
         </Frame>
@@ -152,7 +166,7 @@
             <Paths>
                 <Receiver>
                     <ReceiverID>3</ReceiverID>
-                    <Path>0;2;4</Path>
+                    <Path>0;6</Path>
                 </Receiver>
             </Paths>
         </Frame>
@@ -167,7 +181,7 @@
             <Paths>
                 <Receiver>
                     <ReceiverID>3</ReceiverID>
-                    <Path>0;2;4</Path>
+                    <Path>0;6</Path>
                 </Receiver>
             </Paths>
         </Frame>
@@ -178,11 +192,11 @@
             <Size unit="Byte">1000</Size>
             <StartingTime unit="ns">0</StartingTime>
             <EndToEnd unit="ns">800000</EndToEnd>
-            <SenderID>5</SenderID>
+            <SenderID>3</SenderID>
             <Paths>
                 <Receiver>
-                    <ReceiverID>3</ReceiverID>
-                    <Path>0;2;4</Path>
+                    <ReceiverID>5</ReceiverID>
+                    <Path>7;1</Path>
                 </Receiver>
             </Paths>
         </Frame>
@@ -193,11 +207,11 @@
             <Size unit="Byte">1000</Size>
             <StartingTime unit="ns">0</StartingTime>
             <EndToEnd unit="ns">800000</EndToEnd>
-            <SenderID>5</SenderID>
+            <SenderID>3</SenderID>
             <Paths>
                 <Receiver>
-                    <ReceiverID>3</ReceiverID>
-                    <Path>0;2;4</Path>
+                    <ReceiverID>5</ReceiverID>
+                    <Path>7;1</Path>
                 </Receiver>
             </Paths>
         </Frame>
@@ -212,7 +226,7 @@
             <Paths>
                 <Receiver>
                     <ReceiverID>5</ReceiverID>
-                    <Path>5;3;1</Path>
+                    <Path>7;1</Path>
                 </Receiver>
             </Paths>
         </Frame>

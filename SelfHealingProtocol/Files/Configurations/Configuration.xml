@@ -37,6 +37,13 @@
                         <Speed unit="MBs">100</Speed>
                     </Link>
                 </Connection>
+                <Connection>
+                    <NodeID>3</NodeID>
+                    <Link category="Wired">
+                        <LinkID>6</LinkID>
+                        <Speed unit="MBs">100</Speed>
+                    </Link>
+                </Connection>
             </Node>
             <Node category="Switch">
                 <NodeID>2</NodeID>
@@ -61,6 +68,13 @@
                     <NodeID>2</NodeID>
                     <Link category="Wired">
                         <LinkID>5</LinkID>
+                        <Speed unit="MBs">100</Speed>
+                    </Link>
+                </Connection>
+                <Connection>
+                    <NodeID>1</NodeID>
+                    <Link category="Wired">
+                        <LinkID>7</LinkID>
                         <Speed unit="MBs">100</Speed>
                     </Link>
                 </Connection>
@@ -105,8 +119,19 @@
     <Schedule>
         <Algorithm name="OneShot">
             <MIPGAP>0.00</MIPGAP>
-            <TimeLimit>100.0</TimeLimit>
+            <TimeLimit>60.0</TimeLimit>
             <FramesIteration>1</FramesIteration>
         </Algorithm>
     </Schedule>
+    <Simulation>
+        <GeneralInformation>
+            <Algorithm>SHP</Algorithm>
+        </GeneralInformation>
+        <Events>
+            <Failure component="Link">
+                <ID>6</ID>
+                <Time unit="ns">10001</Time>
+            </Failure>
+        </Events>
+    </Simulation>
 </Configuration>

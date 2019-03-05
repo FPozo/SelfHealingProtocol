@@ -82,6 +82,13 @@ typedef struct Traffic {
 /* Getters */
 
 /**
+ Get the number of fixed frames for the patch
+
+ @return number of fixed frames for the patch
+ */
+int get_num_fixed_frames(void);
+
+/**
  Get the switch minimum time in ns
 
  @return switch minimum time in ns
@@ -163,6 +170,22 @@ int prepare_network(void);
  */
 int read_network_xml(char *network_file);
 
+/**
+ Read the information of the patch in the xml file and saves its information into the invernal variables
+
+ @param patch_file name and path of the patching xml file
+ @return 0 if correct, -1 otherwise
+ */
+int read_patch_xml(char *patch_file);
+
+/**
+ Read the information of the optimize in the xml file and saves its information into the invernal variables
+ 
+ @param optimize_file name and path of the optimizing xml file
+ @return 0 if correct, -1 otherwise
+ */
+int read_optimize_xml(char *optimize_file);
+
 /* Output Functions */
 
 /**
@@ -174,3 +197,11 @@ int read_network_xml(char *network_file);
  @return 0 if correct, -1 otherwise
  */
 int write_schedule_xml(char *schedule_file);
+
+/**
+ Write the obtained patched schedule for all allocated frames into a xml file.
+
+ @param patch_file name and path of the patched schedule xml file
+ @return 0 if correct, -1 otherwise
+ */
+int write_patch_xml(char *patch_file);

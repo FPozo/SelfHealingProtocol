@@ -19,11 +19,123 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * """
 
 from enum import Enum
-from enforce import runtime_validation
-from typing import List
+from typing import List, Dict, Union
 
 
-@runtime_validation
+class Offset:
+    """
+    Class that contains the time transmissions of a frame in a link
+    """
+
+    # Init #
+
+    def __init__(self):
+        """
+        Init of the Offset
+        """
+        self.__num_instances = 0
+        self.__num_replicas = 0
+        self.__transmission_times: List[List[int]] = []
+        self.__ending_times: List[List[int]] = []
+
+    # Getters #
+
+    @property
+    def num_instances(self) -> int:
+        """
+        Get the number of instances
+        :return: number of instances
+        """
+        return self.__num_instances
+
+    # Functions #
+
+    def prepare_offset(self, num_instances: int, num_replicas: int) -> None:
+        """
+        Prepare the offset to be populated given the number of instances and replicas
+        :param num_instances: number of instances
+        :param num_replicas: number of replicas
+        :return: nothing
+        """
+        if num_instances <= 0:
+            raise ValueError('The number of instances should be a positive number')
+        if num_replicas < 0:
+            raise ValueError('The number of replicas should be a natural number')
+
+        self.__num_instances = num_instances
+        self.__num_replicas = num_replicas
+        # Prepare the matrices with the transmission times, only do it if is not prepared already
+        if not self.__transmission_times:
+            for _ in range(num_instances):
+                self.__transmission_times.append([])
+                self.__ending_times.append([])
+                for _ in range(num_replicas + 1):
+                    self.__transmission_times[-1].append(-1)
+                    self.__ending_times[-1].append(-1)
+
+    def get_transmission_time(self, instance: int, replica: int) -> int:
+        """
+        Get the transmission time of the given instance and replica
+        :param instance: instance index
+        :param replica: replica index
+        :return: transmission time
+        """
+        if instance < 0 or instance >= self.__num_instances:
+            raise ValueError('The given instance is outside the range')
+        if replica < 0 or replica > self.__num_replicas:
+            raise ValueError('The given replica is outside the range')
+
+        return self.__transmission_times[instance][replica]
+
+    def set_transmission_time(self, instance: int, replica: int, time: int) -> None:
+        """
+        Set the transmission time of the given instance and replica
+        :param instance: instance index
+        :param replica: replica index
+        :param time: transmission time
+        :return: nothing
+        """
+        if instance < 0 or instance >= self.__num_instances:
+            raise ValueError('The given instance is outside the range')
+        if replica < 0 or replica > self.__num_replicas:
+            raise ValueError('The given replica is outside the range')
+        if self.__transmission_times[instance][replica] != -1 and self.__transmission_times[instance][replica] != time:
+            raise ValueError('The given transmission time was already initialized and it does not match')
+
+        self.__transmission_times[instance][replica] = time
+
+    def get_ending_time(self, instance: int, replica: int) -> int:
+        """
+        Get the ending time of the given instance and replica
+        :param instance: instance index
+        :param replica: replica index
+        :return: ending time
+        """
+        if instance < 0 or instance >= self.__num_instances:
+            raise ValueError('The given instance is outside the range')
+        if replica < 0 or replica > self.__num_replicas:
+            raise ValueError('The given replica is outside the range')
+
+        return self.__ending_times[instance][replica]
+
+    def set_ending_time(self, instance: int, replica: int, time: int) -> None:
+        """
+        Set the ending time of the given instance and replica
+        :param instance: instance index
+        :param replica: replica index
+        :param time: ending time
+        :return: nothing
+        """
+        if instance < 0 or instance >= self.__num_instances:
+            raise ValueError('The given instance is outside the range')
+        if replica < 0 or replica > self.__num_replicas:
+            raise ValueError('The given replica is outside the range')
+        if self.__ending_times[instance][replica] != -1 and self.__ending_times[instance][replica] != time:
+            raise ValueError('The given ending time was already initialized and it does not match')
+
+        self.__ending_times[instance][replica] = time
+
+
 class Frame:
     """
     Class that contains the information of a time-triggered frame
@@ -73,7 +185,8 @@ class Frame:
         self.size = size
         self.starting_time = starting_time
         self.end_to_end = end_to_end
-        self.__paths = {}                       # Dictionary with paths from the sender to the receivers
+        self.__paths: Dict[int, List[int]] = {}      # Dictionary with paths from the sender to the receivers
+        self.__offsets: Dict[int, Offset] = {}       # Dictionary with the offsets with the link id as the key
 
     # Getters #
 
@@ -134,6 +247,14 @@ class Frame:
         """
         return self.__receivers_id
 
+    @property
+    def offsets(self) -> Dict[int, Offset]:
+        """
+        Get the offsets
+        :return: Dictionary with the offsets
+        """
+        return self.__offsets
+
     def get_path(self, receiver: int) -> List[int]:
         """
         Get the path to a receiver id
@@ -145,6 +266,17 @@ class Frame:
         if receiver not in self.__paths.keys():
             raise ValueError('The path to the receiver is not defined')
         return self.__paths[receiver]
+
+    def get_offset_by_link(self, link_id: int) -> Union[None, Offset]:
+        """
+        Get the offset of the frame if exists for the given link id
+        :param link_id: link identifier
+        :return: offset if the frame has a transmission in the given link, none otherwise
+        """
+        if link_id in self.__offsets.keys():
+            return self.__offsets[link_id]
+        else:
+            return None
 
     # Setters #
 
@@ -245,3 +377,68 @@ class Frame:
         if receiver not in self.receivers_id:
             raise ValueError('The given receiver is not defined in the list of receivers')
         self.__paths[receiver] = link_path
+        # Init the offset for all the different links of the frame
+        for link in link_path:
+            if link not in self.__offsets.keys():
+                self.__offsets[link] = Offset()
+
+    def exchange_path(self, link: int, new_path: List[int]) -> None:
+        """
+        For the given link, exchange the transmission with the new path, also updates the offsets dictionary
+        :param link: link identifier to delete
+        :param new_path: new path to update
+        :return: nothing
+        """
+        # Check all paths if the given link appears to replace
+        for path in self.__paths.values():
+            # If the link is in the path, remove it and replace it for the given new path
+            if link in path:
+                index_link = path.index(link)
+                path.remove(link)
+                path[index_link:index_link] = new_path
+
+    def add_offset(self, link_id: int) -> None:
+        """
+        Add a new offset for the given link identifiers
+        :param link_id: link identifiers
+        :return: nothing
+        """
+        self.offsets[link_id] = Offset()
+
+    def prepare_link_offset(self, link_id: int, num_instances: int, num_replicas: int) -> None:
+        """
+        Prepare the offset of the given link to receive transmission times
+        :param link_id: link identifier
+        :param num_instances: number of instances in the offset
+        :param num_replicas: number of replicas in the offset
+        :return: nothing
+        """
+        if link_id not in self.__offsets.keys():
+            raise ValueError('The frames does not have an offset for the given link id')
+        self.__offsets[link_id].prepare_offset(num_instances, num_replicas)
+
+    def set_offset_transmission_time(self, link_id: int, instance: int, replica: int, time: int) -> None:
+        """
+        Set the transmission time for the given offset link
+        :param link_id: link identifier
+        :param instance: instance index
+        :param replica: replica index
+        :param time: transmission time
+        :return: nothing
+        """
+        if link_id not in self.__offsets.keys():
+            raise ValueError('The frames does not have an offset for the given link id')
+        self.__offsets[link_id].set_transmission_time(instance, replica, time)
+
+    def set_offset_ending_time(self, link_id: int, instance: int, replica: int, time: int) -> None:
+        """
+        Set the ending time for the given offset link
+        :param link_id: link identifier
+        :param instance: instance index
+        :param replica: replica index
+        :param time: ending time
+        :return: nothing
+        """
+        if link_id not in self.__offsets.keys():
+            raise ValueError('The frames does not have an offset for the given link id')
+        self.__offsets[link_id].set_ending_time(instance, replica, time)

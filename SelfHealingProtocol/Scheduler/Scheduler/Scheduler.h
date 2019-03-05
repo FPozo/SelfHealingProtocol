@@ -28,6 +28,15 @@ typedef enum Scheduler{
     incremental
 }Scheduler;
 
+/**
+ Sorted linked list transmission block
+ */
+typedef struct LS_Transmission{
+    long long int starting;
+    long long int ending;
+    struct LS_Transmission *next_transmission;
+}LS_Transmission;
+
                                                 /* AUXILIAR FUNCTIONS */
 
                                                 /* CODE DEFINITIONS */
@@ -53,6 +62,13 @@ int incremental_approach(void);
  @return 0 if the schedule was found, -1 otherwise
  */
 int schedule_network(void);
+
+/**
+ Patch the traffic in a fast heuristic
+
+ @return 0 if patch was found, -1 otherwise
+ */
+int patch(void);
 
 /**
  Read the scheduler parameters

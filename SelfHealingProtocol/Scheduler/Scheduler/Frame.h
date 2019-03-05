@@ -25,6 +25,8 @@
 
 typedef struct Offset {
     long long int **offset;             // Matrix with the transmission times in ns
+    long long int **min_offset;         // Matrix with the minimum transmission time allowed in ns (for patching)
+    long long int **max_offset;         // Matrix with the maximum transmission time allowed in ns (for patching)
     int **var_num;                      // Variable number for the gurobi solver
     char **var_name;                    // Variable name for the gurobi solver
     int num_instances;                  // Number of offset instances (hyperperiod / period frame)
@@ -211,6 +213,26 @@ int get_var_name(Offset *pt, int instance, int replica);
 long long int get_trans_time(Offset *pt, int instance, int replica);
 
 /**
+ Get the minimum possible transmission time of the given offset, instance and replica
+ 
+ @param pt pointer to the offset
+ @param instance number of instance
+ @param replica number of replica
+ @return minimum possible transmission time requested
+ */
+long long int get_min_trans_time(Offset *pt, int instance, int replica);
+
+/**
+ Get the maximum possible transmission time of the given offset, instance and replica
+ 
+ @param pt pointer to the offset
+ @param instance number of instance
+ @param replica number of replica
+ @return maximum possible transmission time requested
+ */
+long long int get_max_trans_time(Offset *pt, int instance, int replica);
+
+/**
  Get the number of paths in a link
 
  @param pt pointer to the path
@@ -345,6 +367,20 @@ int set_var_name(Offset *pt, int instance, int replica, int name);
  */
 int set_trans_time(Offset *pt, int instance, int replica, long long int time);
 
+/**
+ Set the avaiable range of transmission time of an offset
+ 
+ @param pt pointer to the offset
+ @param instance number of instance
+ @param replica number of replica
+ @param min_transmission minimum available transmission
+ @param max_transmission maximum available transmission
+ @param time_slots number of time slots of the transmission
+ @return 0 if done correctly, -1 otherwise
+ */
+int set_trans_range(Offset *pt, int instance, int replica, long long int min_transmission,
+                    long long int max_transmission, int time_slots);
+
 /* Functions */
 
 /**
@@ -369,3 +405,13 @@ int init_offsets(Frame *pt, int max_link_id, long long int hyperperiod);
  @return 0 if done correctly, -1 otherwise
  */
 int init_offset_reservation(Frame *pt, int max_link_id, long long int hyperperiod);
+
+/**
+ For the given frame, init the offset needed to save the information of a frame with a single offset
+
+ @param pt pointer to the frame
+ @param instance number of instances in the offset
+ @param replica number of replicas in the offset
+ @return 0 if done correctly, -1 otherwise
+ */
+int init_offset_patch(Frame *pt, int instance, int replica);

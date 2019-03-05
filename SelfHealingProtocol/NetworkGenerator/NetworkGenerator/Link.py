@@ -13,11 +13,9 @@
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * """
 
 from enum import Enum
-from enforce import runtime_validation
 from typing import Union
 
 
-@runtime_validation
 class Link:
     """
     Class that contains the information fo the link (speed and type)
