@@ -13,8 +13,6 @@
 #include "Scheduler/Scheduler.h"
 
 int main(int argc, const char * argv[]) {
-    // insert code here...
-    printf("Hello, Optimizing World!\n");
 //    read_optimize_xml("/Users/fpo01/OneDrive - Mälardalens högskola/PhD Folder/Software/SelfHealingProtocol/SelfHealingProtocol/Files/Outputs/Optimize_6_1.xml");
 //    optimize();
 //    write_optimize_xml("/Users/fpo01/OneDrive - Mälardalens högskola/PhD Folder/Software/SelfHealingProtocol/SelfHealingProtocol/Files/Outputs/OptimizedSchedule_6_1.xml");
