@@ -13,6 +13,7 @@
 #include "Scheduler.h"
 #include "Network.h"
 
+
                                                     /* VARIABLES */
 
 GRBenv *env = NULL;                 // Gurobi solver environment
@@ -33,9 +34,11 @@ long long int fix_con = 0;          // Counter of fixed variables
 int frames_it = 1;                  // Frames solved at each iteration of the incremental approach
 Scheduler algorithm;                // Algorithm used to schedule the network
 double MIPGAP = 0.0;                // MIP GAP limit when to stop searching
-double timelimit;                   // Time limit when to stop executing the solver (in the case of the incremetal
+double timelimit = 100;             // Time limit when to stop executing the solver (in the case of the incremetal
                                     // it is the time limit PER ITERATION)
 LS_Transmission *sorted_trans = NULL;        // Started point of the sorted linked list with the link transmissions
+uint64_t execution_time = 0;        // Execution time of the patch or optimization algorithm
+int *var_shp_optimize = NULL;       // Gurobi variables for the SHP reservation for the optimize
 
 
                                                     /* FUNCTIONS */
@@ -110,6 +113,9 @@ int init_solver(void) {
         fprintf(stderr, "The gurobi solver could not be initialized\n");
         return -1;
     }
+    
+    // Silence the output
+    GRBsetintparam(env, GRB_INT_PAR_OUTPUTFLAG, 0);
     
     // Set the MIPGAP
     GRBsetdblparam(env, GRB_DBL_PAR_MIPGAP, MIPGAP);
@@ -229,8 +235,6 @@ int create_intermission_variables(Frame *frames, int num, int accum_num, int it)
     // Allocate to save the frame and link distances variables
     frame_dis = realloc(frame_dis, sizeof(int) * (accum_num + num));
     link_dis = malloc(sizeof(int) * (get_higher_link_id() + 1));
-    
-    
     
     // Create all the frame intermissions
     for (int i = accum_num; (i - accum_num) < num; i++) {
@@ -849,7 +853,352 @@ int allocate_patch_traffic(Frame *frames, int num) {
     return 0;
 }
 
+/**
+ Add traffic with fixed transmission to the solver
+
+ @param frames pointer to the frames to allocate
+ @param num number of frames to fix
+ @return 0 if done corretly, -1 otherwise
+ */
+int add_fixed_traffic(Frame *frames, int num) {
+    
+    char name[100];
+    
+    // For all the fixed frames, add them into the solver with a fixed range
+    for (int fr_it = 0; fr_it < num; fr_it++) {
+        // The fixed traffic only has one offset
+        Offset *off_pt = get_offset_it(&frames[fr_it], 0);
+        // Fix the transmission time in the model
+        for (int inst = 0; inst < get_off_num_instances(off_pt); inst++) {
+            sprintf(name, "Fix_Off_%d_%d", fr_it, inst);
+            long long int trans_time = get_trans_time(off_pt, inst, 0);
+            if (GRBaddvar(model, 0, NULL, NULL, 0, trans_time, trans_time, GRB_INTEGER, name)) {
+                printf("%s\n", GRBgeterrormsg(env));
+                return -1;
+            }
+            set_var_name(off_pt, inst, 0, var_it);
+            var_it += 1;
+        }
+    }
+    
+    // Add all the variables for the self-healing protocol if it exists
+    SelfHealing_Protocol *shp = get_healing_protocol();
+    int instances_protocol = (int)(get_hyperperiod() / shp->period);
+    var_shp_optimize = malloc(sizeof(int) * instances_protocol);
+    for (int i = 0; i < instances_protocol; i++) {
+        int trans_time = (int)(shp->period * i);
+        sprintf(name, "SHP_%d", i);
+        if (GRBaddvar(model, 0, NULL, NULL, 0, trans_time, trans_time, GRB_INTEGER, name)) {
+            printf("%s\n", GRBgeterrormsg(env));
+            return -1;
+        }
+        var_shp_optimize[i] = var_it;
+        var_it += 1;
+    }
+    
+    GRBupdatemodel(model);
+    
+    return 0;
+}
+
+/**
+ Add traffic to the solver with the avaiable range
+ 
+ @param frames pointer to the frames to allocate
+ @param num number of frames to fix
+ @param accum_num number of frames that were already created their offsets
+ @return 0 if done corretly, -1 otherwise
+ */
+int add_traffic_optimize(Frame *frames, int num, int accum_num) {
+    
+    char name[100];
+    
+    // For all the fixed frames, add them into the solver with a fixed range
+    for (int i = accum_num; (i - accum_num) < num; i++) {
+        int frame_id = get_frame_id(i);
+        // The fixed traffic only has one offset
+        Offset *off_pt = get_offset_it(&frames[i], 0);
+        // Fix the transmission time in the model
+        for (int inst = 0; inst < get_off_num_instances(off_pt); inst++) {
+            sprintf(name, "Off_%d_%d", frame_id, inst);
+            long long int lb = get_min_trans_time(off_pt, inst, 0);
+            long long int ub = get_max_trans_time(off_pt, inst, 0);
+            if (GRBaddvar(model, 0, NULL, NULL, 0, lb, ub, GRB_INTEGER, name)) {
+                printf("%s\n", GRBgeterrormsg(env));
+                return -1;
+            }
+            set_var_name(off_pt, inst, 0, var_it);
+            var_it += 1;
+        }
+    }
+    
+    GRBupdatemodel(model);
+    
+    return 0;
+}
+
+/**
+ Init the variables that maximize the distances between transmission of frames and the link for the optimize
+ 
+ @param frames list of frames to create the contraint
+ @param num number of frames in the list
+ @param accum_num number of frames that were already created their offsets
+ @param it iteration for creating the link intermission differently for each iteration
+ @return 0 if done correctly, -1 otherwise
+ */
+int create_intermission_variables_optimize(Frame *frames, int num, int accum_num, int it) {
+    
+    char name[100];
+    
+    // If link distances were init, remove the obj from them
+    if (link_dis != NULL) {
+        GRBsetdblattrelement(model, GRB_DBL_ATTR_OBJ, link_dis[0], 0.0);
+    }
+    
+    // Allocate to save the frame and link distances variables
+    frame_dis = realloc(frame_dis, sizeof(int) * (accum_num + num));
+    link_dis = malloc(sizeof(int));
+    
+    // Create all the frame intermissions
+    for (int i = accum_num; (i - accum_num) < num; i++) {
+        sprintf(name, "FrameDis_%d", get_frame_id(i));
+        
+        // Calculate the maximum distance the frame could have
+        Offset *off_pt = get_offset_it(&frames[i], 0);
+        long long int max_distance = get_max_trans_time(off_pt, 0, 0) - get_min_trans_time(off_pt, 0, 0);
+        for (int inst = 0; inst < get_off_num_instances(off_pt); inst++) {
+            long long int distance = get_max_trans_time(off_pt, inst, 0) - get_min_trans_time(off_pt, inst, 0);;
+            if (max_distance < distance) {
+                max_distance = distance;
+            }
+        }
+    
+        if (GRBaddvar(model, 0, NULL, NULL, frame_dis_w, 0, max_distance, GRB_INTEGER, name)) {
+            printf("%s\n", GRBgeterrormsg(env));
+            return -1;
+        }
+        frame_dis[i] = var_it;
+        var_it += 1;
+        
+        for (int inst = 0; inst < get_off_num_instances(off_pt); inst++) {
+            int var_off[] = {get_var_name(off_pt, inst, 0), frame_dis[i]};
+            double val[] = {1, -1};
+            
+            // Offset - frame distance > LB
+            if (GRBaddconstr(model, 2, var_off, val, GRB_GREATER_EQUAL, get_min_trans_time(off_pt, inst, 0), NULL)) {
+                printf("%s\n", GRBgeterrormsg(env));
+                return -1;
+            }
+            
+            double val2[] = {1, 1};
+
+            // Offset - frame instance < UB
+            if (GRBaddconstr(model, 2, var_off, val2, GRB_LESS_EQUAL, get_max_trans_time(off_pt, inst, 0), NULL)) {
+                printf("%s\n", GRBgeterrormsg(env));
+                return -1;
+            }
+        }
+        
+    }
+    
+    // Create the link intermissions
+    sprintf(name, "LinkDis_%d", it);
+    if (GRBaddvar(model, 0, NULL, NULL, link_dis_w, 0, get_hyperperiod(), GRB_INTEGER, name)) {
+        printf("%s\n", GRBgeterrormsg(env));
+        return -1;
+    }
+    link_dis[0] = var_it;
+    var_it += 1;
+    
+    return 0;
+}
+
+/**
+ Avoid that any frame transmission collides at the same time on the optimize
+ 
+ @param frames list of frames to create the constraint
+ @param num number of frames in the list
+ @param accum_num number of frames that were already created their offsets
+ @return 0 if done correctly, -1 otherwise
+ */
+int avoid_collision_optimize(Frame *frames, int num, int accum_num) {
+ 
+    char name[100];
+    SelfHealing_Protocol *shp = get_healing_protocol();
+    int instances_protocol = (int)(get_hyperperiod() / shp->period);
+    
+    // For all frames, for all its offsets, if the offsets can collide, add constraint to avoid it
+    for (int fr_it = accum_num; (fr_it - accum_num) < num; fr_it++) {
+        Offset *off = get_offset_it(&frames[fr_it], 0);
+        int link_inter = link_dis[0];
+        
+        // For all the frames that were added before, check if the offsets ids are the same to add the constraint
+        int pre_fr_it = 0;
+        while (pre_fr_it < fr_it) {
+            
+            // Get the previous frame pointer, or the bandwitdh allocation frame
+            Frame *pre_frame_pt = &frames[pre_fr_it];
+            
+            Offset *pre_off = get_offset_it(pre_frame_pt, 0);
+            // If the frame has an offset with the same link, continue
+            for (int inst = 0; inst < get_off_num_instances(off); inst++) {
+                for (int pre_inst = 0; pre_inst < get_off_num_instances(pre_off); pre_inst++) {
+                    
+                    // Check if both offsets share an interval and we need to add the constraint
+                    long long int min1 = get_min_trans_time(off, inst, 0);
+                    long long int max1 = get_max_trans_time(off, inst, 0);
+                    long long int min2 = get_min_trans_time(pre_off, pre_inst, 0);
+                    long long int max2 = get_max_trans_time(pre_off, pre_inst, 0);
+                    if ((min1 <= min2 && min2 < max1) || (min2 <= min1 && min1 < max2)) {
+                        
+                        for (int repl = 0; repl < get_off_num_replicas(off); repl++) {
+                            for (int pre_repl = 0; pre_repl < get_off_num_replicas(pre_off); pre_repl++) {
+                                
+                                long long int distance1 = get_off_time(off);
+                                long long int distance2 = get_off_time(pre_off);
+                                
+                                sprintf(name, "x_%lld", x_con);
+                                x_con += 1;
+                                // Add two binary variables to chosse between two constraints
+                                if (GRBaddvar(model, 0, NULL, NULL, 0, 0, 1, GRB_BINARY, name)) {
+                                    printf("%s\n", GRBgeterrormsg(env));
+                                    return -1;
+                                }
+                                sprintf(name, "y_%lld", y_con);
+                                y_con += 1;
+                                if (GRBaddvar(model, 0, NULL, NULL, 0, 0, 1, GRB_BINARY, name)) {
+                                    printf("%s\n", GRBgeterrormsg(env));
+                                    return -1;
+                                }
+                                sprintf(name, "z_%lld", z_con);
+                                z_con += 1;
+                                var_it += 2;
+                                // Add binary variable to force one of both previous variables to true
+                                if (GRBaddvar(model, 0, NULL, NULL, 0, 1, 1, GRB_BINARY, name)) {
+                                    printf("%s\n", GRBgeterrormsg(env));
+                                    return -1;
+                                }
+                                var_it += 1;
+                                int ind[] = {var_it -3, var_it -2};
+                                sprintf(name, "or_%lld", or_con);
+                                or_con += 1;
+                                if (GRBaddgenconstrOr(model, name, var_it - 1, 2, ind)) {
+                                    printf("%s\n", GRBgeterrormsg(env));
+                                    return -1;
+                                }
+                                
+                                // Depending of the active variable, we choose one or the other constraint
+                                // Offset + distance1 + link_dis <= previous offset
+                                int var[] = {get_var_name(off, inst, repl),
+                                    get_var_name(pre_off, pre_inst, pre_repl),
+                                    link_inter};
+                                double val[] = {-1.0, 1.0, -1.0};
+                                sprintf(name, "Avoid_%lld_1", avoid_con);
+                                if (GRBaddgenconstrIndicator(model, name, var_it - 3, 1, 3, var, val,
+                                                             GRB_GREATER_EQUAL, distance1)) {
+                                    printf("%s\n", GRBgeterrormsg(env));
+                                    return -1;
+                                }
+                                // Previous offset + distance2 + link_dis <= offset
+                                double val2[] = {1.0, -1.0, -1.0};
+                                sprintf(name, "Avoid_%lld_2", avoid_con);
+                                avoid_con += 1;
+                                if (GRBaddgenconstrIndicator(model, name, var_it - 2, 1, 3, var, val2,
+                                                             GRB_GREATER_EQUAL, distance2)) {
+                                    printf("%s\n", GRBgeterrormsg(env));
+                                    return -1;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            pre_fr_it += 1;
+        }
+        
+        // Take into account the SHP reservation too
+        for (int inst = 0; inst < get_off_num_instances(off); inst++) {
+            for (int i = 0; i < instances_protocol; i++) {
+                
+                long long int min1 = get_min_trans_time(off, inst, 0);
+                long long int max1 = get_max_trans_time(off, inst, 0);
+                long long int min2 = (shp->period * i);
+                long long int max2 = (shp->period * i) + shp->time;
+                
+                if ((min1 <= min2 && min2 < max1) || (min2 <= min1 && min1 < max2)) {
+                    
+                    long long int distance1 = get_off_time(off);
+                    long long int distance2 = shp->time;
+                    
+                    sprintf(name, "x_%lld", x_con);
+                    x_con += 1;
+                    // Add two binary variables to chosse between two constraints
+                    if (GRBaddvar(model, 0, NULL, NULL, 0, 0, 1, GRB_BINARY, name)) {
+                        printf("%s\n", GRBgeterrormsg(env));
+                        return -1;
+                    }
+                    sprintf(name, "y_%lld", y_con);
+                    y_con += 1;
+                    if (GRBaddvar(model, 0, NULL, NULL, 0, 0, 1, GRB_BINARY, name)) {
+                        printf("%s\n", GRBgeterrormsg(env));
+                        return -1;
+                    }
+                    sprintf(name, "z_%lld", z_con);
+                    z_con += 1;
+                    var_it += 2;
+                    // Add binary variable to force one of both previous variables to true
+                    if (GRBaddvar(model, 0, NULL, NULL, 0, 1, 1, GRB_BINARY, name)) {
+                        printf("%s\n", GRBgeterrormsg(env));
+                        return -1;
+                    }
+                    var_it += 1;
+                    int ind[] = {var_it -3, var_it -2};
+                    sprintf(name, "or_%lld", or_con);
+                    or_con += 1;
+                    if (GRBaddgenconstrOr(model, name, var_it - 1, 2, ind)) {
+                        printf("%s\n", GRBgeterrormsg(env));
+                        return -1;
+                    }
+                    
+                    // Depending of the active variable, we choose one or the other constraint
+                    // Offset + distance1 + link_dis <= previous offset
+                    int var[] = {get_var_name(off, inst, 0),
+                        var_shp_optimize[i],
+                        link_inter};
+                    double val[] = {-1.0, 1.0, -1.0};
+                    sprintf(name, "Avoid_%lld_1", avoid_con);
+                    if (GRBaddgenconstrIndicator(model, name, var_it - 3, 1, 3, var, val,
+                                                 GRB_GREATER_EQUAL, distance1)) {
+                        printf("%s\n", GRBgeterrormsg(env));
+                        return -1;
+                    }
+                    // Previous offset + distance2 + link_dis <= offset
+                    double val2[] = {1.0, -1.0, -1.0};
+                    sprintf(name, "Avoid_%lld_2", avoid_con);
+                    avoid_con += 1;
+                    if (GRBaddgenconstrIndicator(model, name, var_it - 2, 1, 3, var, val2,
+                                                 GRB_GREATER_EQUAL, distance2)) {
+                        printf("%s\n", GRBgeterrormsg(env));
+                        return -1;
+                    }
+                    
+                }
+            }
+        }
+    }
+    GRBupdatemodel(model);
+    return 0;
+}
+
 /* Functions */
+
+/**
+ Get the execution time of the last algorithm applied
+ */
+long long int get_execution_time(void) {
+    
+    return (long long int) execution_time;
+}
 
 /**
  Schedule all the transmission times of all the frames at the same time given the given scheduling parameters.
@@ -920,7 +1269,6 @@ int incremental_approach(void) {
     int frames_scheduled = 0;       // Number of frames already scheduled
     int it = 1;                     // Number of iteration done in the incremental approach
     int do_protocol = 1;            // Init variables of the self-healing protocol
-    char name[200];
     
     init_solver();
     Traffic *t = get_traffic();
@@ -963,8 +1311,6 @@ int incremental_approach(void) {
             return -1;
         }
         
-        GRBwrite(model, name);
-        
         GRBoptimize(model);
         
         int solcount;
@@ -973,8 +1319,6 @@ int incremental_approach(void) {
             fprintf(stderr, "No schedule found for the iteration %d\n", it);
             return -1;
         }
-        
-        GRBwrite(model, name);
         
         // Save the obtained model into internal memory and check if the solver is correct (does not violate constraints)
         save_offsets(t->frames, frames_it, frames_scheduled);
@@ -1025,6 +1369,9 @@ int schedule_network(void) {
  */
 int patch(void) {
     
+    // Get the starting time to execute
+    execution_time = clock_gettime_nsec_np(CLOCK_REALTIME);
+    
     Traffic *t = get_traffic();
     int fixed_frames = get_num_fixed_frames();
     
@@ -1033,11 +1380,88 @@ int patch(void) {
         fprintf(stderr, "Error preparing the fixed traffic when patching\n");
         return -1;
     }
+    
     // For all frames, allocate a frame at a time
     if (allocate_patch_traffic(&t->frames[fixed_frames], t->num_frames - fixed_frames) == -1) {
         fprintf(stderr, "Error allocating traffic when patching\n");
         return -1;
     }
+    
+    execution_time = clock_gettime_nsec_np(CLOCK_REALTIME) - execution_time;
+    
+    return 0;
+}
+
+/**
+ Optimize the traffic that was patched before
+ 
+ @return 0 if optimize was found, -1 otherwise
+ */
+int optimize(void) {
+    
+    // Get the starting time to execute
+    execution_time = clock_gettime_nsec_np(CLOCK_REALTIME);
+    
+    Traffic *t = get_traffic();
+    int fixed_frames = get_num_fixed_frames();
+
+    init_solver();
+    
+    // Add the fixed traffic to the solver
+    if (add_fixed_traffic(t->frames, fixed_frames) == -1) {
+        fprintf(stderr, "Error adding the fixed variables to the solver when optimizing\n");
+        return -1;
+    }
+    
+    int frames_scheduled = fixed_frames;        // Number of frames already scheduled
+    int it = 1;                                 // Number of iteration done in the incremental approach
+    
+    // While there are frames to schedule, we iterate
+    while (frames_scheduled < t->num_frames) {
+        
+        // Adjust the frame_it so it does not try to schedule frames that do not exist
+        if (frames_scheduled + frames_it > t->num_frames) {
+            frames_it = t->num_frames - frames_scheduled;
+        }
+        
+        // Allocate a frame at a time
+        if (add_traffic_optimize(t->frames, frames_it, frames_scheduled) == -1) {
+            fprintf(stderr, "Error allocating traffic when optimizing\n");
+            return -1;
+        }
+        
+        // Create the intermission variables to maximize
+        if (create_intermission_variables_optimize(t->frames, frames_it, frames_scheduled, it) == -1) {
+            fprintf(stderr, "Failure creating intermission variables\n");
+            return -1;
+        }
+        
+        // Avoid collision for the new allocated frames
+        if (avoid_collision_optimize(t->frames, frames_it, frames_scheduled) == -1) {
+            fprintf(stderr, "Error avoiding collision when optimizing\n");
+            return -1;
+        }
+        
+        GRBoptimize(model);
+        
+        int solcount;
+        GRBgetintattr(model, GRB_INT_ATTR_SOLCOUNT, &solcount);
+        if (solcount == 0) {
+            fprintf(stderr, "No schedule found for the iteration %d\n", it);
+            return -1;
+        }
+        
+        // Save the obtained model into internal memory and check if the solver is correct
+        save_offsets(t->frames, frames_it, frames_scheduled);
+        
+        // Adjust the indexes
+        it += 1;
+        frames_scheduled += frames_it;
+    }
+    
+    close_solver();
+    
+    execution_time = clock_gettime_nsec_np(CLOCK_REALTIME) - execution_time;
     
     return 0;
 }

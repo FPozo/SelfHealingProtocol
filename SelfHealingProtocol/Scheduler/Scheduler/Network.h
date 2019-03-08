@@ -205,3 +205,16 @@ int write_schedule_xml(char *schedule_file);
  @return 0 if correct, -1 otherwise
  */
 int write_patch_xml(char *patch_file);
+
+/**
+ Write the obtained optimized schedule for all allocated frames into a xml file.
+ 
+ @param optimize_file name and path of the optimized schedule xml file
+ @return 0 if correct, -1 otherwise
+ */
+int write_optimize_xml(char *optimize_file);
+
+/**
+ Write the execution time of the last algoritm invoqued
+ */
+int write_execution_time_xml(char *execution_file);

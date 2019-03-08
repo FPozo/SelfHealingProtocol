@@ -12,6 +12,7 @@
 
 
 #include "Network.h"
+#include "Scheduler.h"
 
                                                 /* VARIABLES */
 
@@ -1891,7 +1892,7 @@ int write_patch_xml(char *patch_file) {
     
     // Init xml variables needed to write information in the file
     xmlDoc *top_xml;
-    xmlNode *root_xml, *general_xml, *traffic_xml;
+    xmlNode *root_xml, *general_xml, *traffic_xml, *timing_xml;
     char char_value[100];
     
     // Create the top file
@@ -1911,13 +1912,94 @@ int write_patch_xml(char *patch_file) {
                                 &traffic.frames[i], traffic.frames_id[i]);
     }
     
+    // Write execution time
+    timing_xml = xmlNewChild(root_xml, NULL, BAD_CAST "Timing", NULL);
+    sprintf(char_value, "%lld", get_execution_time());
+    xmlNewChild(timing_xml, NULL, BAD_CAST "ExecutionTime", BAD_CAST char_value);
+    
     // Write the file and clean up the variables
     xmlSaveFormatFileEnc(patch_file, top_xml, "UTF-8", 1);
-    xmlFreeDoc(top_xml);
-    xmlFreeNode(root_xml);
-    xmlFreeNode(general_xml);
-    xmlFreeNode(traffic_xml);
+//    xmlFreeDoc(top_xml);
+//    xmlFreeNode(root_xml);
+//    xmlFreeNode(general_xml);
+//    xmlFreeNode(traffic_xml);
+//    xmlFreeNode(timing_xml);
     xmlCleanupParser();
         
+    return 0;
+}
+
+/**
+ Write the obtained optimized schedule for all allocated frames into a xml file.
+ We use the same functions as the patched file as the output is the same
+ */
+int write_optimize_xml(char *optimize_file) {
+    
+    // Init xml variables needed to write information in the file
+    xmlDoc *top_xml;
+    xmlNode *root_xml, *general_xml, *traffic_xml, *timing_xml = NULL;
+    char char_value[100];
+    
+    // Create the top file
+    top_xml = xmlNewDoc(BAD_CAST "1.0");
+    root_xml = xmlNewNode(NULL, BAD_CAST "OptimizedSchedule");
+    xmlDocSetRootElement(top_xml, root_xml);
+    
+    // Write the link id of the patch
+    general_xml = xmlNewChild(root_xml, NULL, BAD_CAST "GeneralInformation", NULL);
+    sprintf(char_value, "%d", patched_link);
+    xmlNewChild(general_xml, NULL, BAD_CAST "LinkID", BAD_CAST char_value);
+    
+    // Write all allocated frames information and transmission times
+    traffic_xml = xmlNewChild(root_xml, NULL, BAD_CAST "TrafficInformation", NULL);
+    for (int i = num_frames_fixed; i < traffic.num_frames; i++) {
+        write_patched_frame_xml(xmlNewChild(traffic_xml, NULL, BAD_CAST "Frame", NULL),
+                                &traffic.frames[i], traffic.frames_id[i]);
+    }
+    
+    // Write execution time
+    timing_xml = xmlNewChild(root_xml, NULL, BAD_CAST "Timing", NULL);
+    sprintf(char_value, "%lld", get_execution_time());
+    xmlNewChild(timing_xml, NULL, BAD_CAST "ExecutionTime", BAD_CAST char_value);
+    
+    // Write the file and clean up the variables
+    xmlSaveFormatFileEnc(optimize_file, top_xml, "UTF-8", 1);
+    xmlFreeDoc(top_xml);
+//    xmlFreeNode(root_xml);
+//    xmlFreeNode(general_xml);
+//    xmlFreeNode(traffic_xml);
+//    xmlFreeNode(timing_xml);
+    xmlCleanupParser();
+    
+    return 0;
+}
+
+/**
+ Write the execution time of the last algoritm invoqued
+ */
+int write_execution_time_xml(char *execution_file) {
+ 
+    // Init xml variables needed to write information in the file
+    xmlDoc *top_xml;
+    xmlNode *root_xml, *timing_xml;
+    char char_value[100];
+    
+    // Create the top file
+    top_xml = xmlNewDoc(BAD_CAST "1.0");
+    root_xml = xmlNewNode(NULL, BAD_CAST "Timing");
+    xmlDocSetRootElement(top_xml, root_xml);
+    
+    // Write execution time
+    timing_xml = xmlNewChild(root_xml, NULL, BAD_CAST "Timing", NULL);
+    sprintf(char_value, "%lld", get_execution_time());
+    xmlNewChild(timing_xml, NULL, BAD_CAST "ExecutionTime", BAD_CAST char_value);
+    
+    // Write the file and clean up the variables
+    xmlSaveFormatFileEnc(execution_file, top_xml, "UTF-8", 1);
+    xmlFreeDoc(top_xml);
+//    xmlFreeNode(root_xml);
+//    xmlFreeNode(timing_xml);
+    xmlCleanupParser();
+    
     return 0;
 }

@@ -238,7 +238,7 @@ class Network:
         Get the number of frames
         :return: number of frames
         """
-        return self.__num_frames
+        return len(self.frames)
 
     @property
     def traffic_information(self) -> TrafficInformation:
@@ -731,7 +731,10 @@ class Network:
         :param receiver_id: receiver id identifier
         :return:
         """
-        return networkx.shortest_path(self.__graph, sender_id, receiver_id)
+        try:
+            return networkx.shortest_path(self.__graph, sender_id, receiver_id)
+        except networkx.exception.NetworkXNoPath:
+            raise ValueError('No path connecting the sender and receiver')
 
     def get_offsets_by_link(self, link_id: int) -> List[Tuple[int, Frame, Offset]]:
         """

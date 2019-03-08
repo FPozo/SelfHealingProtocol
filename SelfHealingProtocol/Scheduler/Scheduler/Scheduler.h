@@ -18,6 +18,7 @@
 
 #include <stdio.h>
 #include <gurobi_c.h>
+#include <Time.h>
 
 #endif /* Scheduler_h */
 
@@ -40,6 +41,13 @@ typedef struct LS_Transmission{
                                                 /* AUXILIAR FUNCTIONS */
 
                                                 /* CODE DEFINITIONS */
+
+/**
+ Get the execution time of the last algorithm applied
+
+ @return execution time in nanoseconds
+ */
+long long int get_execution_time(void);
 
 /**
  Schedule all the transmission times of all the frames at the same time given the given scheduling parameters
@@ -69,6 +77,13 @@ int schedule_network(void);
  @return 0 if patch was found, -1 otherwise
  */
 int patch(void);
+
+/**
+ Optimize the traffic that was patched before
+
+ @return 0 if optimize was found, -1 otherwise
+ */
+int optimize(void);
 
 /**
  Read the scheduler parameters
