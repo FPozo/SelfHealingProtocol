@@ -60,7 +60,7 @@ class Network:
                 return value * 1000
             if unit == Network.TimeUnit.ms.name:
                 return value * 1000000
-            if unit == Network.TimeUnit.ns.name:
+            if unit == Network.TimeUnit.s.name:
                 return value * 1000000000
             raise TypeError('The unit is not recognized or supported')
 
@@ -238,7 +238,7 @@ class Network:
         Get the number of frames
         :return: number of frames
         """
-        return len(self.frames)
+        return self.__num_frames
 
     @property
     def traffic_information(self) -> TrafficInformation:
@@ -724,6 +724,21 @@ class Network:
                 return
         raise ValueError('The given link id was not found')
 
+    def get_link_ids(self) -> List[int]:
+        """
+        Get all the link ids of the network
+        :return: nothing
+        """
+        link_ids: List[int] = []
+        for _, _, link_data in self.__graph.out_edges(data=True):
+            if link_data['id'] not in link_ids:
+                link_ids.append(link_data['id'])
+        # We also check in edged just in case removing links affects the network graph somehow
+        for _, _, link_data in self.__graph.in_edges(data=True):
+            if link_data['id'] not in link_ids:
+                link_ids.append(link_data['id'])
+        return link_ids
+
     def get_shortest_path(self, sender_id: int, receiver_id: int):
         """
         Get the shortest path from the sender to the receiver id
@@ -775,7 +790,7 @@ class Network:
                         temp_range[1] -= self.minimum_switch_time
 
                     # If is the last link of the path, it can end at the end
-                    if link_id == path[-1]:
+                    elif link_id == path[-1]:
                         temp_range[0] = frame.get_offset_by_link(path[-2]).get_ending_time(instance, 0)
                         temp_range[0] += self.minimum_switch_time
 
@@ -884,17 +899,60 @@ class Network:
 
                 # Check the first and last links in the path for the end to end delay constraint
                 offset = frame.get_offset_by_link(path[0])
-                last_offset = frame.get_offset_by_link(path[-1])
+                # last_offset = frame.get_offset_by_link(path[-1])
 
                 for instance in range(offset.num_instances):
 
                     distance = frame.end_to_end + 1
                     distance -= (offset.get_ending_time(instance, 0) - offset.get_transmission_time(instance, 0))
-                    transmission_time = offset.get_transmission_time(instance, 0)
-                    last_transmission_time = last_offset.get_transmission_time(instance, 0)
+                    # transmission_time = offset.get_transmission_time(instance, 0)
+                    # last_transmission_time = last_offset.get_transmission_time(instance, 0)
 
-                    if (last_transmission_time - transmission_time) > distance:
-                        raise ValueError('The end to end delay of frame ' + str(frame_id) + ' is wrong')
+                    # if (last_transmission_time - transmission_time) > distance:
+                    #    raise ValueError('The end to end delay of frame ' + str(frame_id) + ' is wrong')
+
+    def update_utilization(self) -> None:
+        """
+        Update the global network utilization and the utilization of every link
+        :return: nothing
+        """
+        # Reset the utilization
+        self.__utilization = 0.0
+        self.__link_utilization = {}
+
+        # Add utilization for every transmission
+        for frame in self.frames.values():
+            for link_id, offset in frame.offsets.items():
+
+                # Only add the utilization if the link id has the path
+                if link_id in [link_path for receiver_id in frame.receivers_id
+                               for link_path in frame.get_path(receiver_id)]:
+
+                    for instance in range(offset.num_instances):
+
+                        start_time = offset.get_transmission_time(instance, 0)
+                        end_time = offset.get_ending_time(instance, 0)
+
+                        if link_id not in self.__link_utilization.keys():
+                            self.__link_utilization[link_id] = 0.0
+                        self.__link_utilization[link_id] += float(end_time - start_time) / self.__hyper_period
+                        self.__utilization += float(end_time - start_time) / self.__hyper_period / self.__num_links
+
+    def get_num_offsets(self, link_id: int) -> int:
+        """
+        Get the number of offsets transmitted in the given link
+        :param link_id: link identifier
+        :return: number of offsets
+        """
+        counter = 0
+
+        # For all frames, if the frame has an offset with that link id and is in the path count all the instances
+        for frame in self.frames.values():
+            if link_id in [link_path for receiver_id in frame.receivers_id
+                           for link_path in frame.get_path(receiver_id)]:
+                offset = frame.get_offset_by_link(link_id)
+                counter += offset.num_instances
+        return counter
 
     # Input Functions #
 
@@ -1126,6 +1184,7 @@ class Network:
         :return: nothing
         """
         # Read all frames in the schedule
+        self.__num_frames = len(traffic_xml.findall('Frame'))
         for frame_xml in traffic_xml.findall('Frame'):  # type: Xml.Element
             frame_id = int(frame_xml.find('FrameID').text)
             added_links = []    # Auxiliary added links to not double add link utilization

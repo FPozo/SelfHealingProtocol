@@ -1,5 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration>
+    <Evaluation>
+        <Name>Trying</Name>
+        <Input algorithm="ExhaustiveSimulation">
+            <GenerateNetwork>1</GenerateNetwork>
+            <LinkDepth>2</LinkDepth>
+            <DistanceFailure unit="s">10</DistanceFailure>
+        </Input>
+        <Output>
+            <AddDatabase>1</AddDatabase>
+        </Output>
+    </Evaluation>
     <Network>
         <GeneralInformation>
             <SwitchInformation>
@@ -130,7 +141,7 @@
         <Events>
             <Failure component="Link">
                 <ID>6</ID>
-                <Time unit="ns">10001</Time>
+                <Time unit="ms">1</Time>
             </Failure>
         </Events>
     </Simulation>

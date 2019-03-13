@@ -15,7 +15,7 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * """
 
 
-from Event import FrameEvent, ExecutionEvent
+from Event import FrameEvent, ExecutionEvent, InternalEvent
 from typing import List, Union
 from bisect import bisect_left
 
@@ -32,13 +32,14 @@ class SimulatedNode:
         """
         Init of the simulated node data and status
         """
-        self.__event_queue: List[Union[FrameEvent, ExecutionEvent]] = []    # All events sorted by event time
+        # All events sorted by event time
+        self.__event_queue: List[Union[FrameEvent, ExecutionEvent, InternalEvent]] = []
         self.__notified: List[int] = []     # List of SHP ids that the node already got notified with
         self.__found: List[int] = []        # List of SHP ids that the node already got notified to find the path
 
     # Functions #
 
-    def add_event(self, event: Union[FrameEvent, ExecutionEvent]) -> None:
+    def add_event(self, event: Union[FrameEvent, ExecutionEvent, InternalEvent]) -> None:
         """
         Add a new event to the sorted event queue. It needs to be ordered, with the first event to happen as first
         :param event: event to add
@@ -60,7 +61,7 @@ class SimulatedNode:
         position = bisect_left(times, event.time)
         self.__event_queue.insert(position, event)
 
-    def get_next_event(self) -> Union[FrameEvent, ExecutionEvent, None]:
+    def get_next_event(self) -> Union[FrameEvent, ExecutionEvent, InternalEvent, None]:
         """
         Get the next event
         :return: next event to execute
@@ -70,7 +71,7 @@ class SimulatedNode:
         else:
             return None
 
-    def pop_next_event(self) -> Union[FrameEvent, ExecutionEvent]:
+    def pop_next_event(self) -> Union[FrameEvent, ExecutionEvent, InternalEvent]:
         """
         Pop the next event
         :return: next event to execute

@@ -204,3 +204,51 @@ class ExecutionEvent(Event):
             self.__name = name
         else:
             self.__name = self.ExecutionName[name]
+
+
+class InternalEvent(Event):
+    """
+    Event that is internal for the simulator, such as a link failure
+    """
+
+    class InternalName(Enum):
+        """
+        Enumeration of the name of the internal event
+        """
+        LinkFailure = 'LinkFailure'
+
+    # Init #
+
+    def __init__(self, event_id: int, name: Union[str, InternalName], time: int) -> None:
+        """
+        Init the execution event
+        :param event_id: event id
+        :param time: time when the event is executed
+        :param name: name of the execution event
+        """
+        super().__init__(event_id, time)
+        self.name = name
+
+    # Getters #
+
+    @property
+    def name(self) -> InternalName:
+        """
+        Get the execution event name
+        :return: execution event name
+        """
+        return self.__name
+
+    # Setters #
+
+    @name.setter
+    def name(self, name: Union[str, InternalName]) -> None:
+        """
+        Set the execution event name
+        :param name: execution event name
+        :return: nothing
+        """
+        if type(name) is self.InternalName:
+            self.__name = name
+        else:
+            self.__name = self.InternalName[name]

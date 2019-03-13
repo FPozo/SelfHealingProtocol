@@ -1,5 +1,5 @@
 import Network
-import Simulation
+import Simulator
 
 if __name__ == "__main__":
 
@@ -9,7 +9,7 @@ if __name__ == "__main__":
     # n.write_network_xml('../Files/Networks/network.xml')
     n.read_network_xml('../Files/Networks/network.xml')
     n.read_schedule_xml('../Files/Schedules/schedule.xml')
-    s = Simulation.Simulation(n)
+    s = Simulator.Simulation(n)
     s.read_simulation_xml('../Files/Configurations/Configuration.xml')
     s.simulate()
     print('Stop here to debug')

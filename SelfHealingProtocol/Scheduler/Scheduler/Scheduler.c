@@ -1488,7 +1488,7 @@ double get_float_value_xml(xmlDoc *top_xml, char *path) {
     context = xmlXPathNewContext(top_xml);
     result = xmlXPathEvalExpression((xmlChar*) path, context);
     if (result->nodesetval->nodeTab == NULL) {
-        fprintf(stderr, "The searched value is not defined\n");
+        fprintf(stderr, "The searched value float is not defined\n");
         return -1.0;
     }
     value = xmlNodeListGetString(top_xml, result->nodesetval->nodeTab[0]->xmlChildrenNode, 1);
@@ -1526,7 +1526,7 @@ int read_schedule_parameters_xml(char *parameters_xml) {
     context = xmlXPathNewContext(top_xml);
     result = xmlXPathEvalExpression((xmlChar*) "/Configuration/Schedule/Algorithm", context);
     if (result->nodesetval->nodeTab == NULL) {
-        fprintf(stderr, "The searched value is not defined\n");
+        fprintf(stderr, "The searched value algorithm is not defined\n");
         return -1;
     }
     value2 = xmlGetProp(result->nodesetval->nodeTab[0], (xmlChar*) "name");
@@ -1553,7 +1553,7 @@ int read_schedule_parameters_xml(char *parameters_xml) {
         context = xmlXPathNewContext(top_xml);
         result = xmlXPathEvalExpression((xmlChar*) "/Configuration/Schedule/Algorithm/FramesIteration", context);
         if (result->nodesetval->nodeTab == NULL) {
-            fprintf(stderr, "The searched value is not defined\n");
+            fprintf(stderr, "The searched value Frames Iteration is not defined\n");
             return -1;
         }
         value = xmlNodeListGetString(top_xml, result->nodesetval->nodeTab[0]->xmlChildrenNode, 1);

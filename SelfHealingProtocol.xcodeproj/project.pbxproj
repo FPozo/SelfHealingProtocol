@@ -82,8 +82,8 @@
 		606ED9B821F777910081802B /* Files */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Files; sourceTree = "<group>"; };
 		6085E51721A40F0C00F13E7B /* SelfHealingProtocol */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = SelfHealingProtocol; sourceTree = BUILT_PRODUCTS_DIR; };
 		6085E51A21A40F0C00F13E7B /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
-		6085E53621A414EB00F13E7B /* main.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = main.py; sourceTree = "<group>"; };
 		609FFA81221C54330009CCC5 /* Simulator */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Simulator; sourceTree = "<group>"; };
+		60A05E1D22396399007793FA /* Evaluator */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Evaluator; sourceTree = "<group>"; };
 		60E48ABB22281CAB0017E0E5 /* TestingSimulator.py */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.python; path = TestingSimulator.py; sourceTree = "<group>"; };
 		60E48ABC22281CB30017E0E5 /* TestingNetworkGenerator.py */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.python; path = TestingNetworkGenerator.py; sourceTree = "<group>"; };
 		60E48ABD22281CD50017E0E5 /* patch.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = patch.c; sourceTree = "<group>"; };
@@ -201,7 +201,7 @@
 		6085E53221A4144700F13E7B /* Evaluator */ = {
 			isa = PBXGroup;
 			children = (
-				6085E53621A414EB00F13E7B /* main.py */,
+				60A05E1D22396399007793FA /* Evaluator */,
 			);
 			path = Evaluator;
 			sourceTree = "<group>";

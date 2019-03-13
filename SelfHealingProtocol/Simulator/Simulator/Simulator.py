@@ -20,12 +20,13 @@ from typing import NamedTuple, List, Dict, Union, Tuple
 from operator import attrgetter, itemgetter
 from enum import Enum
 from SimulatedNode import SimulatedNode
-from Event import FrameEvent, ExecutionEvent
+from Event import FrameEvent, ExecutionEvent, InternalEvent
 from xml.dom import minidom
 from os import remove
 from os.path import isfile
 from subprocess import run
 from math import log2, ceil
+import pandas
 import xml.etree.ElementTree as Xml
 
 
@@ -33,6 +34,19 @@ class Simulation:
     """
     Simulates events that happen to a scheduled network and how it reacts, providing outputs
     """
+
+    # Exceptions
+    class NoPath(Exception):
+        """
+        There exist no path to connect the sender and receiver
+        """
+        pass
+
+    class NoSchedule(Exception):
+        """
+        There does not exist a valid schedule when repairing
+        """
+        pass
 
     # Constants #
 
@@ -79,7 +93,8 @@ class Simulation:
         Init of the simulator
         :param network: given scheduled network to simulate
         """
-        self.__algorithm = None         # Algorithm to execute in the simulation
+        self.__algorithm = None             # Algorithm to execute in the simulation
+        self.__add_database: bool = None    # Add information of the simulation to the database
         self.__network = network
         self.__events: List[Simulation.EventsStarters] = []         # Sorted list of events to simulate
         self.__nodes: Dict[int, SimulatedNode] = {}                 # Dictionary of the simulated nodes by node id
@@ -95,6 +110,16 @@ class Simulation:
         self.__execution_time = 0                           # Execution time of the last execution event
         self.__size_core_frame: Dict[int, int] = {}         # Core size in bits of the base of a SHP frame
         self.__size_member_frame: Dict[int, int] = {}       # Core size in bits of the schedule that is transmitted
+
+        # Information for the database
+        self.__utilization_broken_link: Dict[int, float] = {}            # Utilization of the broken link
+        self.__utilization_new_path: Dict[int, Dict[int, float]] = {}    # Utilization of the new path
+        self.__offsets_broken_link: Dict[int, int] = {}             # Number of offsets in the broken link
+        self.__offsets_new_path: Dict[int, Dict[int, int]] = {}     # Number of offsets in the new path
+        self.__successful_heal: Dict[int, bool] = {}                # Could the broken link be repaired
+        self.__patching_time: Dict[int, Dict[int, int]] = {}             # Time to patch the broken link
+        self.__optimization_L1_time: Dict[int, Dict[int, int]] = {}      # Time to optimize the broken link
+        self.__optimization_L2_time: Dict[int, Dict[int, int]] = {}      # Time to optimize with level 2 the broken link
 
         # Init all the simulated nodes
         for node_id in self.__network.nodes_id:
@@ -122,22 +147,9 @@ class Simulation:
                     raise ValueError('The SHP can only repair links')
 
                 receiver_id = self.__network.get_receiver_id_link(event.component_ID)
-                self.__activator[event.component_ID] = receiver_id
-                sender_id = self.__network.get_sender_id_link(event.component_ID)
-                self.__leader[event.component_ID] = sender_id
-                self.__network.remove_link(event.component_ID)
+                self.__nodes[receiver_id].add_event(InternalEvent(event.component_ID, 'LinkFailure', event.time))
 
-                # Create the paths to communicate between leader and member nodes
-                self.__path_activator[event.component_ID] = self.__network.get_shortest_path(sender_id, receiver_id)
-                self.__path_leader[event.component_ID] = self.__network.get_shortest_path(receiver_id, sender_id)
-                # We remove the first node of every path to avoid duplicates
-                self.__path_member[event.component_ID] = list(self.__path_activator[event.component_ID][1:])
-                self.__path_member[event.component_ID].extend(list(self.__path_leader[event.component_ID][1:]))
-
-                self.__nodes[receiver_id].add_event(FrameEvent(event.component_ID, 'Notification', event.time,
-                                                               self.__SIZE_CODE_LINK + self.__SIZE_CODE_FRAME))
-
-    def __select_next_event(self) -> Tuple[Union[FrameEvent, ExecutionEvent, None], int]:
+    def __select_next_event(self) -> Tuple[Union[FrameEvent, ExecutionEvent, InternalEvent, None], int]:
         """
         For all the events stacked in the simulated nodes, select the next one happening
         :return: the event to simulate and the node id
@@ -174,6 +186,49 @@ class Simulation:
                             FrameEvent.FrameName.Schedule]:
             self.__simulate_single_frame(event, node_id)
 
+    def __simulate_internal_event(self, event: InternalEvent) -> None:
+        """
+        Simulate an internal such as a component failure
+        :param event: event to simulate
+        :return: nothing
+        """
+        if event.name is InternalEvent.InternalName.LinkFailure:
+            receiver_id = self.__network.get_receiver_id_link(event.event_id)
+            self.__activator[event.event_id] = receiver_id
+            sender_id = self.__network.get_sender_id_link(event.event_id)
+            self.__leader[event.event_id] = sender_id
+            self.__network.remove_link(event.event_id)
+
+            if self.__network.get_num_offsets(event.event_id) == 0:     # Nothing to do if there are no transmissions
+                return
+
+            # Create the paths to communicate between leader and member nodes
+            try:
+                self.__path_activator[event.event_id] = self.__network.get_shortest_path(sender_id, receiver_id)
+            except ValueError:
+                self.__successful_heal[event.event_id] = False
+                raise Simulation.NoPath('The link failure cannot be repaired as there is no path to connect')
+            try:
+                self.__path_leader[event.event_id] = self.__network.get_shortest_path(receiver_id, sender_id)
+                self.__successful_heal[event.event_id] = False
+            except ValueError:
+                raise Simulation.NoPath('The link failure cannot be repaired as there is no path to connect')
+            # We remove the first node of every path to avoid duplicates
+            self.__path_member[event.event_id] = list(self.__path_activator[event.event_id][1:])
+            self.__path_member[event.event_id].extend(list(self.__path_leader[event.event_id][1:]))
+
+            self.__nodes[receiver_id].add_event(FrameEvent(event.event_id, 'Notification', event.time,
+                                                           self.__SIZE_CODE_LINK + self.__SIZE_CODE_FRAME))
+
+            # Save the utilization
+            self.__save_utilization_database(event.event_id)
+
+            # Save the number of offsets
+            self.__save_num_offsets_database(event.event_id)
+
+        else:
+            raise ValueError('Internal Event not recognized')
+
     def __simulate_execution_event(self, event: ExecutionEvent, node_id: int) -> None:
         """
         Check which execution event is and simulate it
@@ -194,6 +249,7 @@ class Simulation:
             remove(patch_file)
 
             self.__read_execution_time_xml(execution_file)
+            self.__patching_time[event.event_id][link_id] = self.__execution_time
             remove(execution_file)
 
             if isfile(patched_file):
@@ -225,6 +281,7 @@ class Simulation:
             remove(optimize_file)
 
             self.__read_execution_time_xml(execution_file)
+            self.__optimization_L1_time[event.event_id][link_id] = self.__execution_time
             remove(execution_file)
 
             # If the optimize was successful, read the optimized schedule, otherwise try optimize L2
@@ -240,11 +297,13 @@ class Simulation:
                 # Add the execution time of the failed attempt at optimization level 1
                 before_exec_time = self.__execution_time
                 self.__read_execution_time_xml(execution_file)
+                self.__optimization_L2_time[event.event_id][link_id] = self.__execution_time
                 self.__execution_time += before_exec_time
                 remove(execution_file)
 
                 if not isfile(optimized_file):
-                    raise ValueError('Error Repairing the link ' + str(event.event_id))
+                    self.__successful_heal[event.event_id] = False
+                    raise Simulation.NoSchedule('Error Repairing the link ' + str(event.event_id))
 
                 self.__read_patched_schedule_xml(optimized_file, event.event_id)
                 remove(optimized_file)
@@ -298,7 +357,8 @@ class Simulation:
                 return
 
         elif event.name is FrameEvent.FrameName.Patch:
-            index_path = self.__path_member[event.event_id].index(node_id)
+            # Finds the last index path
+            index_path = [it for it, i in enumerate(self.__path_member[event.event_id]) if i == node_id][-1]
             if index_path + 1 < len(self.__path_member[event.event_id]):
                 receiver_id = self.__path_member[event.event_id][index_path + 1]
                 processing_time = self.__PATCH_PROC_TIME
@@ -317,7 +377,8 @@ class Simulation:
                 return
 
         elif event.name is FrameEvent.FrameName.Optimization:
-            index_path = self.__path_member[event.event_id].index(node_id)
+            # Finds the last index path
+            index_path = [it for it, i in enumerate(self.__path_member[event.event_id]) if i == node_id][-1]
             if index_path + 1 < len(self.__path_member[event.event_id]):
                 receiver_id = self.__path_member[event.event_id][index_path + 1]
                 processing_time = self.__OPTIMIZE_PROC_TIME
@@ -445,8 +506,9 @@ class Simulation:
         else:
             self.__optimization_status[event_id] += 1
 
-        # Check if all patching status were received, if it was, start the update event
+        # Check if all optimization status were received, if it was, start the update event
         if self.__optimization_status[event_id] == (len(self.__path_activator[event_id]) - 1):
+            self.__network.update_utilization()     # We also update the utilization of the network
             self.__nodes[self.__leader[event_id]].add_event(FrameEvent(event_id,
                                                                        FrameEvent.FrameName.UpdateOptimization,
                                                                        time + self.__UPDATE_PROC_TIME,
@@ -531,7 +593,53 @@ class Simulation:
                     if range1[1] < range2[2] and range2[1] < range1[2]:
                         raise ValueError('Transmission at link usages collide')
 
-    # Network Functions #
+    def __save_utilization_database(self, broken_link_id: int) -> None:
+        """
+        Save the utilization of the broken link and the new path for the database
+        :param broken_link_id: broken link identifier
+        :return: nothing
+        """
+
+        # We also init the execution time outputs
+        self.__successful_heal[broken_link_id] = True
+        self.__patching_time[broken_link_id] = {}
+        self.__optimization_L1_time[broken_link_id] = {}
+        self.__optimization_L2_time[broken_link_id] = {}
+
+        try:
+            self.__utilization_broken_link[broken_link_id] = self.__network.link_utilization[broken_link_id]
+        except KeyError:
+            self.__utilization_broken_link[broken_link_id] = 0.0
+        self.__utilization_new_path[broken_link_id] = {}
+        for index_path, _ in enumerate(self.__path_activator[broken_link_id][:-1]):
+            sender_id = self.__path_activator[broken_link_id][index_path]
+            receiver_id = self.__path_activator[broken_link_id][index_path + 1]
+            _, link_id = self.__network.get_link_data(sender_id, receiver_id)
+            try:
+                link_ut = self.__network.link_utilization[link_id]
+            except KeyError:
+                link_ut = 0.0
+            self.__utilization_new_path[broken_link_id][link_id] = link_ut
+
+            self.__patching_time[broken_link_id][link_id] = 0
+            self.__optimization_L1_time[broken_link_id][link_id] = 0
+            self.__optimization_L2_time[broken_link_id][link_id] = 0
+
+    def __save_num_offsets_database(self, broken_link_id: int) -> None:
+        """
+        Save the number of offsets in the broken link and the new path for the database
+        :param broken_link_id: broken link identifier
+        :return: nothing
+        """
+        self.__offsets_broken_link[broken_link_id] = self.__network.get_num_offsets(broken_link_id)
+        self.__offsets_new_path[broken_link_id] = {}
+        for index_path, _ in enumerate(self.__path_activator[broken_link_id][:-1]):
+            sender_id = self.__path_activator[broken_link_id][index_path]
+            receiver_id = self.__path_activator[broken_link_id][index_path + 1]
+            _, link_id = self.__network.get_link_data(sender_id, receiver_id)
+            self.__offsets_new_path[broken_link_id][link_id] = self.__network.get_num_offsets(link_id)
+
+    # Simulation Functions #
 
     def simulate(self) -> None:
         """
@@ -547,11 +655,13 @@ class Simulation:
             elif type(event) is ExecutionEvent:
                 self.__simulate_execution_event(event, node_id)
 
+            elif type(event) is InternalEvent:
+                self.__simulate_internal_event(event)
+
             event, node_id = self.__select_next_event()
-        for link in self.__link_usage.items():
-            print(link)
         self.__test_link_usage()
         self.__network.check_schedule()
+        self.__write_database()
 
     # Input Functions #
 
@@ -578,6 +688,7 @@ class Simulation:
         :return: nothing
         """
         self.__algorithm = self.Algorithm[general_info_xml.find('Algorithm').text]
+        self.__add_database = True if general_info_xml.find('AddDatabase').text == '1' else False
 
     def __read_events_xml(self, events_xml: Xml.Element) -> None:
         """
@@ -845,3 +956,39 @@ class Simulation:
         output_xml = output_xml.decode("utf-8")
         with open(optimize_file, "w") as f:
             f.write(output_xml)
+
+    def __write_database(self) -> None:
+        """
+        Write into the csv database for learning purposes
+        :return: nothing
+        """
+        # Only do it if add database is true
+        if self.__add_database:
+
+            # Convert the outputs into a pandas data frame
+            output = {'Instance': [], 'Broken Link Utilization': [], 'Path Utilization': [], 'Broken Link Offsets': [],
+                      'Path Offsets': [], 'Successful': [], 'Patching Time': [], 'Optimization L1 Time': [],
+                      'Optimization L2 Time': []}
+
+            for link_id, utilization in self.__utilization_broken_link.items():
+                for path_link_id, utilization_path in self.__utilization_new_path[link_id].items():
+
+                    output['Instance'].append(1)
+                    output['Broken Link Utilization'].append(utilization)
+                    output['Path Utilization'].append(utilization_path)
+                    output['Broken Link Offsets'].append(self.__offsets_broken_link[link_id])
+                    output['Path Offsets'].append(self.__offsets_new_path[link_id][path_link_id])
+                    output['Successful'].append(self.__successful_heal[link_id])
+                    output['Patching Time'].append(self.__patching_time[link_id][path_link_id])
+                    output['Optimization L1 Time'].append(self.__optimization_L1_time[link_id][path_link_id])
+                    output['Optimization L2 Time'].append(self.__optimization_L2_time[link_id][path_link_id])
+
+            data = pandas.DataFrame(output)
+
+            # Add header if the database file is not created
+            if isfile('../Files/Database/Database.csv'):
+                with open('../Files/Database/Database.csv', 'a') as database_file:
+                    data.to_csv(database_file, header=False, index=False)
+            else:
+                with open('../Files/Database/Database.csv', 'w') as database_file:
+                    data.to_csv(database_file, index=False)

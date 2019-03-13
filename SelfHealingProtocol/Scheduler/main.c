@@ -14,11 +14,10 @@
 
 int main(int argc, const char * argv[]) {
     // insert code here...
-    printf("Hello, World!\n");
-    read_network_xml("/Users/fpo01/OneDrive - Mälardalens högskola/PhD Folder/Software/SelfHealingProtocol/SelfHealingProtocol/Files/Networks/network.xml");
+    read_network_xml((char*) argv[1]);
     prepare_network();
-    read_schedule_parameters_xml("/Users/fpo01/OneDrive - Mälardalens högskola/PhD Folder/Software/SelfHealingProtocol/SelfHealingProtocol/Files/Configurations/Configuration.xml");
+    read_schedule_parameters_xml((char*) argv[2]);
     schedule_network();
-    write_schedule_xml("/Users/fpo01/OneDrive - Mälardalens högskola/PhD Folder/Software/SelfHealingProtocol/SelfHealingProtocol/Files/Schedules/schedule.xml");
+    write_schedule_xml((char*) argv[3]);
     return 0;
 }
