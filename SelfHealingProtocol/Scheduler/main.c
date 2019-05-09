@@ -13,7 +13,7 @@
 #include "Scheduler/Scheduler.h"
 
 int main(int argc, const char * argv[]) {
-    // insert code here...
+    
     read_network_xml((char*) argv[1]);
     prepare_network();
     read_schedule_parameters_xml((char*) argv[2]);

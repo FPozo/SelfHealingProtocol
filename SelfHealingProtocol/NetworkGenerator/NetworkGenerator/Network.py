@@ -696,6 +696,7 @@ class Network:
         :param receiver_id: node receiver id
         :return: link data and link id
         """
+        # link = self.__graph.get_edge_data(sender_id, receiver_id)
         link = self.__graph.get_edge_data(sender_id, receiver_id)
         return link['link'], link['id']
 
@@ -744,12 +745,58 @@ class Network:
         Get the shortest path from the sender to the receiver id
         :param sender_id: sender id identifier
         :param receiver_id: receiver id identifier
-        :return:
+        :return shortest path:
         """
         try:
             return networkx.shortest_path(self.__graph, sender_id, receiver_id)
         except networkx.exception.NetworkXNoPath:
             raise ValueError('No path connecting the sender and receiver')
+
+    def get_shortest_path_no_end_systems(self, sender_id: int, receiver_id: int, cut_off: int = 25) -> List[int]:
+        """
+        Get the shortest path from the sender to the receiver id but with no end systems in between
+        As finding all simple paths might be computationally expensive, we iteratively search from shorter to longer
+        paths
+        :param sender_id: sender id identifier
+        :param receiver_id: receiver id identifier
+        :param cut_off: maximum path length accepted
+        :return shortest path: shortest valid path found
+        """
+        if sender_id == receiver_id:        # If the sender and received are the same, the path is empty
+            return []
+
+        length_path = 1
+        while length_path <= cut_off:
+            # Find all the paths of length = length_path, if it has less, we remove them
+            all_paths = list(networkx.all_simple_paths(self.__graph, sender_id, receiver_id, cutoff=length_path))
+            all_paths = [path for path in all_paths if len(path) == length_path + 1]
+
+            # Iterate over all paths, if one does not contain a switch among the nodes excluding the first and last
+            # We found the path, if the list runs out of paths, increase the length path
+            for path in all_paths:
+                valid_path = True
+                for nodes_id in path[1:-1]:  # Exclude the first and last nodes which can be end systems
+                    node: Node = self.__graph.nodes[nodes_id]['node']
+                    # If the path contains and end system, reject it and start with the next one
+                    if node.node_type == Node.NodeType.EndSystem:
+                        valid_path = False
+                        break
+                if valid_path:
+                    return path
+            length_path += 1
+
+        raise ValueError('No path connecting the sender and receiver that contains no end systems for the given cutoff')
+
+    def path_nodes_to_links(self, nodes_id: List[int]) -> List[int]:
+        """
+        Convert a path of nodes to a path of links
+        :param nodes_id: path of node ids
+        :return: path of link ids
+        """
+        path_links = []
+        for node_it, node in enumerate(nodes_id[:-1]):
+            path_links.append(self.get_link_data(node, nodes_id[node_it + 1])[1])
+        return path_links
 
     def get_offsets_by_link(self, link_id: int) -> List[Tuple[int, Frame, Offset]]:
         """
@@ -764,6 +811,41 @@ class Network:
             if offset is not None:
                 return_value.append((frame_id, frame, offset))
         return return_value
+
+    def get_atr(self, frame: Frame, offset: Offset, broken_link_id: int, new_path: List[int],
+                link_id: int) -> List[List[int]]:
+
+        range_transmission: List[List[int]] = self.get_available_transmission_range(frame, offset, broken_link_id,
+                                                                                    new_path[-1])
+
+        position_path = new_path.index(link_id)
+
+        for current_range in range_transmission:
+            transmission_length = current_range[1] - current_range[0]
+            current_range[1] = int((position_path + 1) * (transmission_length / len(new_path)) +
+                                   current_range[0])
+            current_range[0] = int(position_path * (transmission_length / len(new_path)) + current_range[0])
+            # Take into account the switch time for the different hops in the path
+            current_range[0] += self.minimum_switch_time
+
+        if position_path != 0 and frame.link_in_path(new_path[position_path - 1]):
+            offset_obstruction = frame.offsets[new_path[position_path - 1]]
+            for instance in range(offset_obstruction.num_instances):
+                range_transmission[instance][0] = offset_obstruction.get_ending_time(instance, 0)
+                range_transmission[instance][0] += self.minimum_switch_time
+        if position_path != (len(new_path) - 1) and frame.link_in_path(new_path[position_path + 1]):
+            offset_obstruction = frame.offsets[new_path[position_path + 1]]
+            for instance in range(offset_obstruction.num_instances):
+                range_transmission[instance][1] = offset_obstruction.get_transmission_time(instance, 0)
+                range_transmission[instance][1] -= int(frame.size * 1000 / self.get_link(link_id).speed)
+                range_transmission[instance][1] -= self.minimum_switch_time
+
+        # Adapt to the timeslot size
+        for instance in range(offset.num_instances):
+            range_transmission[instance][0] = int(range_transmission[instance][0] / self.time_slot_size)
+            range_transmission[instance][1] = int(range_transmission[instance][1] / self.time_slot_size)
+
+        return range_transmission
 
     def get_available_transmission_range(self, frame: Frame, offset: Offset, link_id: int,
                                          last_link_new_path: int) -> List[List[int]]:
@@ -794,13 +876,7 @@ class Network:
                         temp_range[0] = frame.get_offset_by_link(path[-2]).get_ending_time(instance, 0)
                         temp_range[0] += self.minimum_switch_time
 
-                        # Check if the maximum possible range is limited by the end to end delay or the deadline
-                        if (frame.get_offset_by_link(path[0]).get_transmission_time(instance, 0) + frame.end_to_end) < \
-                                (frame.deadline + (frame.period * instance)):
-                            temp_range[1] = frame.get_offset_by_link(path[0]).get_transmission_time(instance, 0)
-                            temp_range[1] += frame.end_to_end
-                        else:
-                            temp_range[1] = frame.deadline + (frame.period + instance)
+                        temp_range[1] = frame.deadline + (frame.period * instance)
 
                     # If the link is between the path
                     else:
@@ -813,17 +889,14 @@ class Network:
 
                     # Take into account also the time to transmit in the last link of the new path
                     temp_range[1] -= int(frame.size * 1000 / self.get_link(last_link_new_path).speed)
+                    if temp_range[0] > temp_range[1]:
+                        raise ValueError('Something went wrong calculating available ranges')
 
                     # Check if the obtained range is the most constrained, if it is, change it
                     if range_transmission[instance][0] < temp_range[0]:
                         range_transmission[instance][0] = temp_range[0]
                     if range_transmission[instance][1] > temp_range[1]:
                         range_transmission[instance][1] = temp_range[1]
-
-        # Adapt to the timeslot size
-        for instance in range(offset.num_instances):
-            range_transmission[instance][0] = int(range_transmission[instance][0] / self.time_slot_size)
-            range_transmission[instance][1] = int(range_transmission[instance][1] / self.time_slot_size)
 
         return range_transmission
 
@@ -839,51 +912,52 @@ class Network:
             checked_frames.append(frame_id)
             # Check if the transmission times are between their limits
             for link_id, offset in frame.offsets.items():
-                for instance in range(offset.num_instances):
-                    transmission_time = offset.get_transmission_time(instance, 0)
-                    ending_time = offset.get_ending_time(instance, 0)
-                    lb = (frame.period * instance) + frame.starting_time
-                    ub = (frame.period * instance) + frame.deadline - (ending_time - transmission_time)
+                if frame.link_in_path(link_id):
+                    for instance in range(offset.num_instances):
+                        transmission_time = offset.get_transmission_time(instance, 0)
+                        ending_time = offset.get_ending_time(instance, 0)
+                        lb = (frame.period * instance) + frame.starting_time
+                        ub = (frame.period * instance) + frame.deadline - (ending_time - transmission_time)
 
-                    if transmission_time < lb:
-                        raise ValueError('The transmission time of frame ' + str(frame_id) + ' of link ' + str(link_id)
-                                         + ' is smaller than should be')
-                    if transmission_time > ub:
-                        raise ValueError('The transmission time of frame ' + str(frame_id) + ' of link ' + str(link_id)
-                                         + ' is larger than should be')
+                        if transmission_time < lb:
+                            raise ValueError('The transmission time of frame ' + str(frame_id) + ' of link '
+                                             + str(link_id) + ' is smaller than should be')
+                        if transmission_time > ub:
+                            raise ValueError('The transmission time of frame ' + str(frame_id) + ' of link '
+                                             + str(link_id) + ' is larger than should be')
 
-                    # Also check if the frame collides with the bandwidth allocation protocol
-                    if self.healing_protocol.period != 0:
-                        protocol_num_instances = int(self.__hyper_period / self.healing_protocol.period)
-                        for protocol_instance in range(protocol_num_instances):
-                            protocol_transmission_time = self.healing_protocol.period * protocol_instance
-                            protocol_ending_time = protocol_transmission_time + self.healing_protocol.time
+                        # Also check if the frame collides with the bandwidth allocation protocol
+                        if self.healing_protocol.period != 0:
+                            protocol_num_instances = int(self.__hyper_period / self.healing_protocol.period)
+                            for protocol_instance in range(protocol_num_instances):
+                                protocol_transmission_time = self.healing_protocol.period * protocol_instance
+                                protocol_ending_time = protocol_transmission_time + self.healing_protocol.time
 
-                            if (protocol_transmission_time < ending_time) and \
-                                    (transmission_time < protocol_ending_time):
-                                raise ValueError(' The frame ' + str(frame_id) + ' collides with the protocol in link '
-                                                 + str(link_id))
+                                if (protocol_transmission_time < ending_time) and \
+                                        (transmission_time < protocol_ending_time):
+                                    raise ValueError(' The frame ' + str(frame_id) +
+                                                     ' collides with the protocol in link ' + str(link_id))
 
-                    # Check if the transmission in the same link of different frames collides
-                    for pre_frame_id in checked_frames[:-1]:
-                        pre_frame = self.frames[pre_frame_id]
+                        # Check if the transmission in the same link of different frames collides
+                        for pre_frame_id in checked_frames[:-1]:
+                            pre_frame = self.frames[pre_frame_id]
 
-                        for pre_link_id, pre_offset in pre_frame.offsets.items():
-                            # Only check if both offsets links are the same
-                            if link_id == pre_link_id:
-                                for pre_instance in range(pre_offset.num_instances):
-                                    pre_transmission_time = pre_offset.get_transmission_time(instance, 0)
-                                    pre_ending_time = pre_offset.get_ending_time(instance, 0)
+                            for pre_link_id, pre_offset in pre_frame.offsets.items():
+                                # Only check if both offsets links are the same
+                                if pre_frame.link_in_path(pre_link_id) and link_id == pre_link_id:
+                                    for pre_instance in range(pre_offset.num_instances):
+                                        pre_transmission_time = pre_offset.get_transmission_time(instance, 0)
+                                        pre_ending_time = pre_offset.get_ending_time(instance, 0)
 
-                                    if (pre_transmission_time < ending_time) and (transmission_time < pre_ending_time):
-                                        raise ValueError(' The frame ' + str(frame_id) + ' and ' + str(pre_frame_id) +
-                                                         ' collide in link ' + str(link_id))
+                                        if (pre_transmission_time < ending_time) and \
+                                                (transmission_time < pre_ending_time):
+                                            raise ValueError(' The frame ' + str(frame_id) + ' and ' +
+                                                             str(pre_frame_id) + ' collide in link ' + str(link_id))
 
             # Check if the paths are correctly followed and the end to end delay is satisfied
             for receiver_id in frame.receivers_id:
                 path = frame.get_path(receiver_id)
                 for link_path_it in range(len(path) - 1):
-
                     offset = frame.get_offset_by_link(path[link_path_it])
                     next_offset = frame.get_offset_by_link(path[link_path_it + 1])
 
@@ -892,24 +966,26 @@ class Network:
                         distance = offset.get_ending_time(instance, 0) - offset.get_transmission_time(instance, 0)
                         distance += self.minimum_switch_time
                         next_transmission_time = next_offset.get_transmission_time(instance, 0)
+
                         transmission_time = offset.get_transmission_time(instance, 0)
 
-                        if (next_transmission_time - transmission_time) <= distance:
+                        if (next_transmission_time - transmission_time) < distance:
                             raise ValueError('The distances of the path of frame ' + str(frame_id) + ' is wrong')
 
                 # Check the first and last links in the path for the end to end delay constraint
                 offset = frame.get_offset_by_link(path[0])
-                # last_offset = frame.get_offset_by_link(path[-1])
+                last_offset = frame.get_offset_by_link(path[-1])
 
                 for instance in range(offset.num_instances):
 
                     distance = frame.end_to_end + 1
                     distance -= (offset.get_ending_time(instance, 0) - offset.get_transmission_time(instance, 0))
-                    # transmission_time = offset.get_transmission_time(instance, 0)
-                    # last_transmission_time = last_offset.get_transmission_time(instance, 0)
+                    transmission_time = offset.get_transmission_time(instance, 0)
+                    last_transmission_time = last_offset.get_transmission_time(instance, 0)
 
-                    # if (last_transmission_time - transmission_time) > distance:
-                    #    raise ValueError('The end to end delay of frame ' + str(frame_id) + ' is wrong')
+                    if (last_transmission_time - transmission_time) > distance:
+                        pass
+                        # raise ValueError('The end to end delay of frame ' + str(frame_id) + ' is wrong')
 
     def update_utilization(self) -> None:
         """
@@ -924,19 +1000,16 @@ class Network:
         for frame in self.frames.values():
             for link_id, offset in frame.offsets.items():
 
-                # Only add the utilization if the link id has the path
-                if link_id in [link_path for receiver_id in frame.receivers_id
-                               for link_path in frame.get_path(receiver_id)]:
+                for instance in range(offset.num_instances):
 
-                    for instance in range(offset.num_instances):
+                    start_time = offset.get_transmission_time(instance, 0)
+                    end_time = offset.get_ending_time(instance, 0)
 
-                        start_time = offset.get_transmission_time(instance, 0)
-                        end_time = offset.get_ending_time(instance, 0)
-
-                        if link_id not in self.__link_utilization.keys():
-                            self.__link_utilization[link_id] = 0.0
-                        self.__link_utilization[link_id] += float(end_time - start_time) / self.__hyper_period
-                        self.__utilization += float(end_time - start_time) / self.__hyper_period / self.__num_links
+                    if link_id not in self.__link_utilization.keys():
+                        self.__link_utilization[link_id] = 0.0
+                    time_transmission = float(end_time - start_time + self.__time_slot_size)
+                    self.__link_utilization[link_id] += time_transmission / self.__hyper_period
+                    self.__utilization += time_transmission / self.__hyper_period / self.__num_links
 
     def get_num_offsets(self, link_id: int) -> int:
         """
@@ -947,12 +1020,50 @@ class Network:
         counter = 0
 
         # For all frames, if the frame has an offset with that link id and is in the path count all the instances
-        for frame in self.frames.values():
-            if link_id in [link_path for receiver_id in frame.receivers_id
-                           for link_path in frame.get_path(receiver_id)]:
+        for frame_id, frame in self.frames.items():
+            if link_id in frame.offsets.keys():
                 offset = frame.get_offset_by_link(link_id)
                 counter += offset.num_instances
         return counter
+
+    def calculate_max_memory_switches(self) -> None:
+        """
+        Calculate the max memory needed on all switches in the network. Result is added into the object
+        :return: nothing
+        """
+        # Get all switches in the network
+        switches: Dict[int, Node] = {}
+        for node_id in self.nodes_id:
+            node = self.__graph.nodes(data=True)[node_id]['node']
+            if node.node_type is Node.NodeType.Switch:
+                switches[node_id] = node
+
+        # For all frames in the schedule, add the required information to the switches
+        for frame in self.frames.values():
+            for link_id, offset in frame.offsets.items():
+
+                # Get sender and receiver of the link to see if we need to add it to the switches
+                sender_id = self.get_sender_id_link(link_id)
+                receiver_id = self.get_receiver_id_link(link_id)
+
+                # If the sender id is a switch, add out transmission
+                if sender_id in switches.keys():
+
+                    for instance in range(offset.num_instances):
+                        switches[sender_id].add_out_transmission((offset.get_transmission_time(instance, 0),
+                                                                  frame.size), link_id)
+
+                # If the receiver id is a switch, add in transmission
+                if receiver_id in switches.keys():
+
+                    for instance in range(offset.num_instances):
+                        switches[receiver_id].add_inc_transmission((offset.get_ending_time(instance, 0), frame.size))
+
+        # Print maximum memory
+        for switch in switches.values():
+            switch.sort_transmissions()
+            switch.calculate_max_memory()
+            print(switch.max_memory)
 
     # Input Functions #
 
@@ -1214,8 +1325,9 @@ class Network:
 
                         # Add the transmission to the utilization
                         if add_ut:
-                            self.__link_utilization[link_id] += float(end_time - start_time) / self.__hyper_period
-                            self.__utilization += float(end_time - start_time) / self.__hyper_period / self.__num_links
+                            time_transmission = float(end_time - start_time + self.__time_slot_size)
+                            self.__link_utilization[link_id] += time_transmission / self.__hyper_period
+                            self.__utilization += time_transmission / self.__hyper_period / self.__num_links
 
     # Output Functions #
 

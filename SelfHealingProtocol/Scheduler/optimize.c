@@ -13,9 +13,10 @@
 #include "Scheduler/Scheduler.h"
 
 int main(int argc, const char * argv[]) {
-//    read_optimize_xml("/Users/fpo01/OneDrive - Mälardalens högskola/PhD Folder/Software/SelfHealingProtocol/SelfHealingProtocol/Files/Outputs/Optimize_6_1.xml");
+//    read_optimize_xml("/Users/fpo01/OneDrive - Mälardalens högskola/PhD Folder/Software/SelfHealingProtocol/SelfHealingProtocol/Files/Outputs/Optimize_21_22.xml");
 //    optimize();
-//    write_optimize_xml("/Users/fpo01/OneDrive - Mälardalens högskola/PhD Folder/Software/SelfHealingProtocol/SelfHealingProtocol/Files/Outputs/OptimizedSchedule_6_1.xml");
+//    write_optimize_xml("/Users/fpo01/OneDrive - Mälardalens högskola/PhD Folder/Software/SelfHealingProtocol/SelfHealingProtocol/Files/Outputs/OptimizedSchedule_21_22.xml");
+    
     read_optimize_xml((char*) argv[1]);
     if (optimize() == -1) {
         write_execution_time_xml((char*) argv[3]);

@@ -323,16 +323,17 @@ int prepare_network(void) {
     // Adjust the timeslot to the maximum size possible (1 nanoseconds is the minimum)
     for (int i = 0; i < traffic.num_frames; i++) {
         for (int j = 0; j < traffic.frames[i].num_offsets; j++) {
-            int link_id = get_link_id_offset_it(&traffic.frames[i], j);
-            int time_frame = (get_size(&traffic.frames[i]) * 1000) / get_speed(link_accelerator[link_id]);
-            // Do not allow the time frame to be less than 1ns, force a minimum of 1ns
-            if (time_frame == 0) {
-                time_frame = 1;
-            }
-            if (size_timeslot == 0) {
-                size_timeslot = time_frame;
-            } else {
-                size_timeslot = (int)gcd(size_timeslot, time_frame);
+            for (int link_id = 0; link_id < number_links; link_id++) {
+                int time_frame = (get_size(&traffic.frames[i]) * 1000) / get_speed(link_accelerator[link_id]);
+                // Do not allow the time frame to be less than 1ns, force a minimum of 1ns
+                if (time_frame == 0) {
+                    time_frame = 1;
+                }
+                if (size_timeslot == 0) {
+                    size_timeslot = time_frame;
+                } else {
+                    size_timeslot = (int)gcd(size_timeslot, time_frame);
+                }
             }
         }
     }
@@ -1540,6 +1541,7 @@ int read_optimize_fixed_traffix_xml(xmlDoc *top_xml) {
             long long int trans_time = atoll(get_ocurr_in_ocurr_value_xml(top_xml, path, i, "Offset/Instance", j,
                                                                           "TransmissionTime"));
             set_trans_time(offset_pt, j, 0, trans_time);
+            set_trans_range(offset_pt, j, 0, trans_time, trans_time, 0);
         }
         long long int trans_time = atoll(get_ocurr_in_ocurr_value_xml(top_xml, path, i, "Offset/Instance", 0,
                                                                       "TransmissionTime"));
@@ -1547,6 +1549,7 @@ int read_optimize_fixed_traffix_xml(xmlDoc *top_xml) {
                                                                     "EndingTime"));
         // Set the time to transmit the frame
         set_time_offset_it(&traffic.frames[i], 0, (int)(end_time - trans_time));
+        
     }
     
     return 0;

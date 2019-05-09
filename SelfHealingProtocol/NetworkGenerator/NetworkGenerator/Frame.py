@@ -278,6 +278,17 @@ class Frame:
         else:
             return None
 
+    def link_in_path(self, link_id: int) -> bool:
+        """
+        Return if the link is in a path
+        :param link_id: link identifier
+        :return: true if is in a path, false otherwise
+        """
+        for path in self.__paths.values():
+            if link_id in path:
+                return True
+        return False
+
     # Setters #
 
     @period.setter
@@ -390,12 +401,33 @@ class Frame:
         :return: nothing
         """
         # Check all paths if the given link appears to replace
-        for path in self.__paths.values():
+        for receiver_id, path in self.__paths.items():
             # If the link is in the path, remove it and replace it for the given new path
             if link in path:
                 index_link = path.index(link)
                 path.remove(link)
                 path[index_link:index_link] = new_path
+
+    def remove_unused_offsets(self) -> None:
+        """
+        Remove the offsets that are not being used in any frame path
+        :return: nothing
+        """
+        link_ids_to_remove = []
+        for link_id, offset in self.__offsets.items():
+
+            found_link = False
+            for receiver_id, path in self.__paths.items():
+                if link_id in path:
+                    found_link = True
+                    break
+            # It it was found, do nothing, start searching the next link
+            if not found_link:
+                link_ids_to_remove.append(link_id)
+
+        # The offsets cannot be removed during the loop iteration, so we save them and remove them later
+        for link_id in link_ids_to_remove:
+            del self.__offsets[link_id]
 
     def add_offset(self, link_id: int) -> None:
         """

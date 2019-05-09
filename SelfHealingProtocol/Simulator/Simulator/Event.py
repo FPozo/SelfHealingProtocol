@@ -15,7 +15,7 @@
 
 
 from enum import Enum
-from typing import Union
+from typing import Union, List
 
 
 class Event:
@@ -88,19 +88,12 @@ class FrameEvent(Event):
         """
         Enumeration of all the frame event names supported
         """
-        Notification = 'Notification'
-        FindingPath = 'FindingPath'
-        NotifyPath = 'NotifyPath'
-        Membership = 'Membership'
-        Patch = 'Patch'
-        UpdatePatch = 'UpdatePatch'
-        Optimization = 'Optimization'
-        UpdateOptimization = 'UpdateOptimization'
-        Schedule = 'Schedule'
-
+        NotificationHS = "NotificationHS"
+        DistributeSchedulePatch = "DistributeSchedulePatch"
+        DistributeScheduleOptimize = "DistributeScheduleOptimize"
     # Init #
 
-    def __init__(self, event_id: int, name: Union[str, FrameName], time: int, size: int):
+    def __init__(self, event_id: int, name: Union[str, FrameName], time: int, size: int, path: List[int] = None):
         """
         Init the frame event
         :param event_id: event id
@@ -111,6 +104,7 @@ class FrameEvent(Event):
         super().__init__(event_id, time)
         self.size = size
         self.name = name
+        self.path = path        # None means it is a broadcast frame
 
     # Getters #
 
@@ -129,6 +123,14 @@ class FrameEvent(Event):
         :return: name of the frame event
         """
         return self.__name
+
+    @property
+    def path(self) -> List:
+        """
+        Get the path of the frame event
+        :return: path of the frame event as a list of node ids
+        """
+        return self.__path
 
     # Setters #
 
@@ -155,6 +157,27 @@ class FrameEvent(Event):
             self.__name = name
         else:
             self.__name = self.FrameName[name]
+
+    @path.setter
+    def path(self, path: List[int]) -> None:
+        """
+        Set the path of the frame event
+        :param path: path of the frame event as a list of node ids
+        :return: nothing
+        """
+        self.__path = path
+
+    # Functions #
+
+    def last_node(self, node_id: int) -> bool:
+        """
+        Return true if is the last node in the path
+        :param node_id: node to check
+        :return: true if is the last node, false otherwise
+        """
+        if self.path == [] or self.path[-1] == node_id:
+            return True
+        return False
 
 
 class ExecutionEvent(Event):

@@ -45,17 +45,6 @@ class SimulatedNode:
         :param event: event to add
         :return: nothing
         """
-        # If the event is a notification or finding path frame and already was received, do not add the event
-        if event.name is FrameEvent.FrameName.Notification and event.event_id in self.__notified:
-            return
-        if event.name is FrameEvent.FrameName.FindingPath and event.event_id in self.__found:
-            return
-        # If the event is a notification or finding path frame, set the node as receiving that node already
-        if event.name is FrameEvent.FrameName.Notification:
-            self.__notified.append(event.event_id)
-        if event.name is FrameEvent.FrameName.FindingPath:
-            self.__found.append(event.event_id)
-
         # Create a list of the times of all the events, then search the position of the new event and add it
         times = [e.time for e in self.__event_queue]
         position = bisect_left(times, event.time)

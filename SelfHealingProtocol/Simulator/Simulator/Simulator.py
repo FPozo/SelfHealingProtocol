@@ -13,21 +13,20 @@
  *                                                                                                                     *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * """
 
-
+from enum import Enum
+from typing import NamedTuple, Dict, List, Tuple, Union
 from Network import Network
 from Link import Link
-from typing import NamedTuple, List, Dict, Union, Tuple
 from operator import attrgetter, itemgetter
-from enum import Enum
 from SimulatedNode import SimulatedNode
-from Event import FrameEvent, ExecutionEvent, InternalEvent
+from math import ceil, log2, floor
+from Event import InternalEvent, FrameEvent, ExecutionEvent
 from xml.dom import minidom
+from subprocess import run
 from os import remove
 from os.path import isfile
-from subprocess import run
-from math import log2, ceil
-import pandas
 import xml.etree.ElementTree as Xml
+import pandas
 
 
 class Simulation:
@@ -35,7 +34,8 @@ class Simulation:
     Simulates events that happen to a scheduled network and how it reacts, providing outputs
     """
 
-    # Exceptions
+    # Exceptions #
+
     class NoPath(Exception):
         """
         There exist no path to connect the sender and receiver
@@ -48,6 +48,22 @@ class Simulation:
         """
         pass
 
+    # Auxiliary Classes #
+
+    class Algorithm(Enum):
+        ISHP = 'ISHP'
+
+    # Named Tuples #
+
+    class EventsStarters(NamedTuple):
+        class Component(Enum):
+            Link = 'Link'
+            Node = 'Node'
+
+        component_type: Component  # Type of component
+        component_ID: int  # ID of the component
+        time: int  # Time when the event happens (or is detected)
+
     # Constants #
 
     __MAX_SIMULATION_TIME = 999999999999999999999999999999999
@@ -59,33 +75,6 @@ class Simulation:
     __SIZE_CODE_FRAME_ID = 4
     __SIZE_CODE_INST = 4
 
-    # Processing times
-    __NOTIFICATION_PROC_TIME = 0
-    __FINDING_PATH_PROC_TIME = 0
-    __NOTIFY_PATH_PROC_TIME = 0
-    __MEMBERSHIP_PROC_TIME = 0
-    __PATCH_PROC_TIME = 0
-    __OPTIMIZE_PROC_TIME = 0
-    __UPDATE_PROC_TIME = 0
-    __SCHEDULE_PROC_TIME = 0
-
-    # Auxiliary Classes #
-
-    class Algorithm(Enum):
-        SHP = 'SHP'
-
-    # Named Tuples #
-
-    class EventsStarters(NamedTuple):
-
-        class Component(Enum):
-            Link = 'Link'
-            Node = 'Node'
-
-        component_type: Component       # Type of component
-        component_ID: int               # ID of the component
-        time: int                       # Time when the event happens (or is detected)
-
     # Init #
 
     def __init__(self, network: Network):
@@ -93,33 +82,41 @@ class Simulation:
         Init of the simulator
         :param network: given scheduled network to simulate
         """
-        self.__algorithm = None             # Algorithm to execute in the simulation
-        self.__add_database: bool = None    # Add information of the simulation to the database
-        self.__network = network
-        self.__events: List[Simulation.EventsStarters] = []         # Sorted list of events to simulate
-        self.__nodes: Dict[int, SimulatedNode] = {}                 # Dictionary of the simulated nodes by node id
-        self.__link_usage: Dict[int, List[Tuple[str, int, int]]] = {}    # Dictionary of transmission usage for testing
-        self.__protocol = self.__network.healing_protocol           # Bandwidth reservation protocol
-        self.__leader: Dict[int, int] = {}                          # Dictionary of leaders for the protocol activation
-        self.__activator: Dict[int, int] = {}                       # Dictionary with the activator of the protocol
-        self.__path_leader: Dict[int, List[int]] = {}       # Dictionary with path from activator to leader by nodes
-        self.__path_activator: Dict[int, List[int]] = {}    # Dictionary with path from leader to activator by nodes
-        self.__path_member: Dict[int, List[int]] = {}       # Dictionary with path from member to leader by nodes
-        self.__patching_status: Dict[int, int] = {}         # Dictionary with patching received by the leader
-        self.__optimization_status: Dict[int, int] = {}     # Dictionary with optimization received by the leader
-        self.__execution_time = 0                           # Execution time of the last execution event
-        self.__size_core_frame: Dict[int, int] = {}         # Core size in bits of the base of a SHP frame
-        self.__size_member_frame: Dict[int, int] = {}       # Core size in bits of the schedule that is transmitted
+        self.__algorithm = None  # Algorithm to execute in the simulation
+        self.__add_database: bool = False  # Add information of the simulation to the database
+        self.__time_classification: int = 100000000  # Maximum time we can tolerate
+        self.__network = network  # Network being simulated
+        self.__protocol = self.__network.healing_protocol  # Bandwidth reservation protocol
+        self.__events: List[Simulation.EventsStarters] = []  # Sorted list of events to simulate
+        self.__nodes: Dict[int, SimulatedNode] = {}  # Simulated nodes by node id
+        self.__link_usage: Dict[int, List[Tuple[str, int, int]]] = {}  # Dictionary of transmission usage for testing
+        self.__high_switches: Dict[int, List[int]] = {}  # High-performance switches and who belongs to it
+        self.__belong_high: Dict[int, int] = {}  # Node belonging to the high-performance switch
+        # Path from the high-performance switch to each of its belonging nodes and the other way around
+        self.__path_high: Dict[Tuple[int, int], Tuple[List[int], List[int]]] = {}
+
+        # Information related to a failure instance
+        self.__leader: Dict[int, int] = {}  # High-performance switch that will re-schedule all
+        self.__activator: Dict[int, int] = {}  # Node that found the failure
+        self.__new_path: Dict[int, List[int]] = {}  # New path for the broken link in nodes
+        self.__new_path_links: Dict[int, List[int]] = {}  # New path for the broken link in links
 
         # Information for the database
-        self.__utilization_broken_link: Dict[int, float] = {}            # Utilization of the broken link
-        self.__utilization_new_path: Dict[int, Dict[int, float]] = {}    # Utilization of the new path
-        self.__offsets_broken_link: Dict[int, int] = {}             # Number of offsets in the broken link
-        self.__offsets_new_path: Dict[int, Dict[int, int]] = {}     # Number of offsets in the new path
-        self.__successful_heal: Dict[int, bool] = {}                # Could the broken link be repaired
-        self.__patching_time: Dict[int, Dict[int, int]] = {}             # Time to patch the broken link
-        self.__optimization_L1_time: Dict[int, Dict[int, int]] = {}      # Time to optimize the broken link
-        self.__optimization_L2_time: Dict[int, Dict[int, int]] = {}      # Time to optimize with level 2 the broken link
+        self.__utilization_broken_link: Dict[int, float] = {}  # Utilization of the broken link
+        self.__utilization_new_path: Dict[int, Dict[int, float]] = {}  # Utilization of the new path
+        self.__offsets_broken_link: Dict[int, int] = {}  # Number of offsets in the broken link
+        self.__offsets_new_path: Dict[int, Dict[int, int]] = {}  # Number of offsets in the new path
+        self.__successful_heal: Dict[int, bool] = {}  # Could the broken link be repaired
+        self.__patching_time: Dict[int, Dict[int, int]] = {}  # Time to patch the broken link
+        self.__optimize_time: Dict[int, Dict[int, int]] = {}  # Time to optimize the broken link
+
+        # Information for the results
+        self.__time_started: Dict[int, int] = {}  # Time when the failure was detected
+        self.__time_patched: Dict[int, int] = {}  # Time from the link error to have the patch running
+        self.__time_optimized: Dict[int, int] = {}  # Same but for the optimization
+        self.__no_path: Dict[int, bool] = {}  # Failed because no path
+        self.__no_schedule: Dict[int, bool] = {}  # Failure because no schedule
+        self.__no_transmission: Dict[int, bool] = {}    # There were no transmissions in the link
 
         # Init all the simulated nodes
         for node_id in self.__network.nodes_id:
@@ -133,21 +130,320 @@ class Simulation:
         simulate
         :return: nothing
         """
-
         # Init the size of the codes
         self.__SIZE_CODE_FRAME = ceil(log2(self.__network.num_frames))
         self.__SIZE_CODE_LINK = ceil(log2(self.__network.num_links))
         self.__SIZE_CODE_TRANS = ceil(log2(self.__network.hyper_period))
 
         # If we are repairing a link
-        if self.__algorithm is self.Algorithm.SHP:
+        if self.__algorithm is self.Algorithm.ISHP:
             for event in self.__events:
 
                 if event.component_type != self.EventsStarters.Component.Link:
                     raise ValueError('The SHP can only repair links')
 
+                self.__time_started[event.component_ID] = event.time
                 receiver_id = self.__network.get_receiver_id_link(event.component_ID)
                 self.__nodes[receiver_id].add_event(InternalEvent(event.component_ID, 'LinkFailure', event.time))
+
+    def __simulate_execution_event(self, event: ExecutionEvent, node_id: int) -> None:
+        """
+        Check which execution event is and simulate it
+        :param event: event to simulate
+        :param node_id: node id of the event to simulate
+        :return: nothing
+        """
+        if event.name is ExecutionEvent.ExecutionName.Patch:
+
+            # For all links in the new path, create the patching file and execute it
+            size_schedule = []
+            for link_it, link_id in enumerate(self.__new_path_links[event.event_id]):
+                size_schedule.append(0)
+                link = self.__network.get_link(link_id)
+
+                patch_file = '../Files/Outputs/Patch_' + str(event.event_id) + '_' + str(link_id) + '.xml'
+                patched_file = '../Files/Outputs/PatchedSchedule_' + str(event.event_id) + '_' + str(link_id) + '.xml'
+                execution_file = '../Files/Outputs/Execution.xml'
+
+                transmission_ranges: Dict[int, List[List[int]]] = {}
+
+                for frame_id, frame, offset in self.__network.get_offsets_by_link(event.event_id):
+                    if frame_id == 1 and link_id == 14:
+                        print('hello')
+
+                    transmission_ranges[frame_id] = self.__network.get_atr(frame, offset, event.event_id,
+                                                                           self.__new_path_links[event.event_id],
+                                                                           link_id)
+
+                    size_schedule[link_it] += self.__SIZE_CODE_FRAME_ID
+                    bit_trans = self.__SIZE_CODE_INST + self.__SIZE_CODE_TRANS
+                    size_schedule[link_it] += bit_trans * len(transmission_ranges[frame_id])
+
+                self.__write_patch_xml(patch_file, link, link_id, transmission_ranges)
+                run(['./../Files/Executables/Patch', patch_file, patched_file, execution_file])
+
+                self.__read_execution_time_xml(execution_file)
+                self.__patching_time[event.event_id][link_id] = self.__execution_time
+                remove(patch_file)
+                remove(execution_file)
+
+                if isfile(patched_file):
+                    pass
+                    remove(patched_file)
+
+            # We assume parallel patching execution
+            time_patch = max(self.__patching_time[event.event_id].values()) + event.time
+            for node_it, patch_node_id in enumerate(self.__new_path[event.event_id][1:]):
+                size = self.__SIZE_CODE_FRAME_ID + size_schedule[node_it]
+                path = self.__path_high[(self.__leader[event.event_id], patch_node_id)][0]
+                self.__nodes[node_id].add_event(FrameEvent(event.event_id, 'DistributeSchedulePatch', time_patch,
+                                                           size, path))
+
+            self.__nodes[node_id].add_event(ExecutionEvent(event.event_id, 'Optimize', time_patch))
+
+        elif event.name is ExecutionEvent.ExecutionName.Optimize:
+
+            size_schedule = []
+            # For all links in the new path, create the optimization file and execute it
+            for link_it, link_id in enumerate(self.__new_path_links[event.event_id]):
+                size_schedule.append(0)
+                link = self.__network.get_link(link_id)
+
+                optimize_file = '../Files/Outputs/Optimize_' + str(event.event_id) + '_' + str(link_id) + '.xml'
+                optimized_file = '../Files/Outputs/OptimizedSchedule_' + str(event.event_id) + '_' + str(link_id) \
+                                 + '.xml'
+                execution_file = '../Files/Outputs/Execution.xml'
+
+                transmission_ranges: Dict[int, List[List[int]]] = {}
+
+                for frame_id, frame, offset in self.__network.get_offsets_by_link(event.event_id):
+                    transmission_ranges[frame_id] = self.__network.get_atr(frame, offset, event.event_id,
+                                                                           self.__new_path_links[event.event_id],
+                                                                           link_id)
+
+                    size_schedule[link_it] += self.__SIZE_CODE_FRAME_ID
+                    bit_trans = self.__SIZE_CODE_INST + self.__SIZE_CODE_TRANS
+                    size_schedule[link_it] += bit_trans * len(transmission_ranges[frame_id])
+
+                self.__write_optimize_xml(optimize_file, link, link_id, transmission_ranges)
+                run(['./../Files/Executables/Optimize', optimize_file, optimized_file, execution_file])
+
+                self.__read_execution_time_xml(execution_file)
+                self.__optimize_time[event.event_id][link_id] = self.__execution_time
+                remove(optimize_file)
+                remove(execution_file)
+
+                if isfile(optimized_file):
+                    self.__read_patched_schedule_xml(optimized_file, event.event_id)
+                    remove(optimized_file)
+
+                else:
+                    self.__no_schedule[event.event_id] = True
+                    raise self.NoSchedule('Optimization step failed, no schedule found')
+
+            # We assume parallel patching execution
+            time_optimize = max(self.__optimize_time[event.event_id].values()) + event.time
+            for node_it, patch_node_id in enumerate(self.__new_path[event.event_id][1:]):
+                size = self.__SIZE_CODE_FRAME_ID + size_schedule[node_it]
+                path = self.__path_high[(self.__leader[event.event_id], patch_node_id)][0]
+                self.__nodes[node_id].add_event(FrameEvent(event.event_id, 'DistributeScheduleOptimize', time_optimize,
+                                                           size, path))
+
+            # Update the paths
+            for frame_id, frame in self.__network.frames.items():
+                for receiver_id in frame.receivers_id:
+                    path: List[int] = list(frame.get_path(receiver_id))
+                    if event.event_id in path:
+                        path.remove(event.event_id)
+
+                        # Add the new path
+                        not_loop_path = frame.get_path(receiver_id)
+                        index_link = not_loop_path.index(event.event_id)
+                        not_loop_path.remove(event.event_id)
+                        not_loop_path[index_link:index_link] = self.__new_path_links[event.event_id]
+
+                        # Remove the loop if there exists one
+                        receivers_paths = [self.__network.get_receiver_id_link(link) for link in path]
+                        for new_link_path in self.__new_path_links[event.event_id]:
+                            if self.__network.get_receiver_id_link(new_link_path) in receivers_paths:
+
+                                # Case when the receivers are the same
+                                index = receivers_paths.index(self.__network.get_receiver_id_link(new_link_path))
+                                link_loop = path[index]
+                                first_index = not_loop_path.index(new_link_path)
+                                last_index = not_loop_path.index(link_loop)
+                                for _ in range(first_index, last_index):
+                                    not_loop_path.pop(first_index + 1)
+
+                                # Special case when the new link path and the link loop are the same
+                                # Remove all the links in between the two repeated links
+                                if new_link_path == link_loop:
+                                    not_loop_path.pop(first_index)
+                                    last_index = not_loop_path.index(link_loop)
+                                    for _ in range(first_index, last_index):
+                                        not_loop_path.pop(first_index)
+
+                                break
+
+            # Remove unused offsets once the network has been repaired
+            for frame in self.__network.frames.values():
+                frame.remove_unused_offsets()
+
+            # Check if everything was done properly and update database and utilization
+            self.__network.check_schedule()
+            self.__write_database(event.event_id)
+            self.__network.update_utilization()
+
+        else:
+            raise ValueError('Execution Event not recognized')
+
+    def __simulate_frame_event(self, event: FrameEvent, node_id: int) -> None:
+        """
+        Check which frame event is and simulate it
+        :param event: event to simulate
+        :param node_id: node id of the event to simulate
+        :return: nothing
+        """
+        if event.name in [FrameEvent.FrameName.NotificationHS, FrameEvent.FrameName.DistributeSchedulePatch,
+                          FrameEvent.FrameName.DistributeScheduleOptimize]:
+            self.__simulate_single_frame(event, node_id)
+
+    def __simulate_single_frame(self, event: FrameEvent, node_id: int) -> None:
+        """
+        Simulates a frame event that is being transmitted over the network
+        :param event: event to simulate
+        :param node_id: node that receives the frame event
+        :return: nothing
+        """
+        if event.name is FrameEvent.FrameName.NotificationHS:
+            if event.last_node(node_id):  # If it has arrived to its destination
+                self.__nodes[node_id].add_event(ExecutionEvent(event.event_id, 'Patch', event.time))
+                return
+            else:  # If not, continue transmitting the frame
+                index_path = event.path.index(node_id)
+                receiver_id = event.path[index_path + 1]
+                processing_time = 0
+                size = event.size
+
+        elif event.name is FrameEvent.FrameName.DistributeSchedulePatch:
+            if event.last_node(node_id):
+
+                # Calculate the time when we update the schedule and save it
+                time_update = event.time - (event.time % self.__network.healing_protocol.period)
+                time_update += self.__network.healing_protocol.period
+                time_patch = time_update - self.__time_started[event.event_id]
+
+                if event.event_id in self.__time_patched.keys():
+                    self.__time_patched[event.event_id] = max(self.__time_patched[event.event_id], time_patch)
+                else:
+                    self.__time_patched[event.event_id] = time_patch
+
+                return
+            else:
+                index_path = event.path.index(node_id)
+                receiver_id = event.path[index_path + 1]
+                size = event.size
+                processing_time = 0
+
+        elif event.name is FrameEvent.FrameName.DistributeScheduleOptimize:
+            if event.last_node(node_id):
+
+                # Calculate the time when we update the schedule and save it
+                time_update = event.time - (event.time % self.__network.healing_protocol.period)
+                time_update += self.__network.healing_protocol.period
+                time_optimize = time_update - self.__time_started[event.event_id]
+
+                if event.event_id in self.__time_optimized.keys():
+                    self.__time_optimized[event.event_id] = max(self.__time_optimized[event.event_id], time_optimize)
+                else:
+                    self.__time_optimized[event.event_id] = time_optimize
+
+                return
+            else:
+                index_path = event.path.index(node_id)
+                receiver_id = event.path[index_path + 1]
+                size = event.size
+                processing_time = 0
+
+        else:
+            raise ValueError('We do not support the given frame event')
+
+        # Calculate timings when the event can be sent
+        link, link_id = self.__network.get_link_data(node_id, receiver_id)
+        time_event = self.__find_time_event(event.time, size, event.name, link, link_id, processing_time)
+
+        # Add the event
+        self.__nodes[receiver_id].add_event(FrameEvent(event.event_id, event.name, time_event, size, event.path))
+
+    def __simulate_internal_event(self, event: InternalEvent) -> None:
+        """
+        Simulates an internal event, such as a component failure
+        :param event: event to simulate
+        :return: nothing
+        """
+        if event.name is InternalEvent.InternalName.LinkFailure:
+
+            print('Starting repairing Link ' + str(event.event_id))
+
+            # Sender and receivers of the broken link
+            sender_id = self.__network.get_sender_id_link(event.event_id)
+            receiver_id = self.__network.get_receiver_id_link(event.event_id)
+            high_switch = self.__belong_high[receiver_id]
+
+            self.__network.remove_link(event.event_id)  # Remove the link from the network
+
+            if self.__network.get_num_offsets(event.event_id) == 0:  # Nothing to do if there are no transmissions
+                self.__no_transmission[event.event_id] = True
+                return
+
+            try:
+                self.__new_path[event.event_id] = self.__network.get_shortest_path_no_end_systems(sender_id,
+                                                                                                  receiver_id)
+            except ValueError:
+                self.__no_path[event.event_id] = True
+                raise Simulation.NoPath('The link failure cannot be repaired as there is no path to connect')
+
+            # Update the path to the high performance switch in the affected systems
+            try:
+                for high_switch_id in self.__high_switches.keys():
+
+                    # for node_id in self.__high_switches[high_switch_id]:
+                    #    path_switch = self.__network.get_shortest_path_no_end_systems(high_switch_id, node_id)
+                    #    path_node = self.__network.get_shortest_path_no_end_systems(node_id, high_switch_id)
+                    #    self.__path_high[(high_switch_id, node_id)] = (path_switch, path_node)
+
+                    # for node_id in self.__high_switches.keys():
+                    #    path_switch = self.__network.get_shortest_path_no_end_systems(high_switch_id, node_id)
+                    #    path_node = self.__network.get_shortest_path_no_end_systems(node_id, high_switch_id)
+                    #    self.__path_high[(high_switch_id, node_id)] = (path_switch, path_node)
+
+                    for node_id in self.__network.nodes_id:
+                        path_switch = self.__network.get_shortest_path_no_end_systems(high_switch_id, node_id)
+                        path_node = self.__network.get_shortest_path_no_end_systems(node_id, high_switch_id)
+                        self.__path_high[(high_switch_id, node_id)] = (path_switch, path_node)
+            except ValueError:
+                self.__no_path[event.event_id] = True
+                raise Simulation.NoPath('No path to connect to the high-performance switch')
+
+            # Collect information needed to simulate the whole process
+            self.__leader[event.event_id] = high_switch
+            self.__activator[event.event_id] = receiver_id
+
+            # Convert some of the needed paths from node ids to link ids
+            self.__new_path_links[event.event_id] = self.__network.path_nodes_to_links(self.__new_path[event.event_id])
+
+            # Start the event to notify the high-performance switch
+            size = self.__SIZE_CODE_FRAME
+            size += self.__SIZE_CODE_LINK * (len(self.__path_high[(high_switch, receiver_id)][1]) - 1)
+            path = self.__path_high[(high_switch, receiver_id)][1]  # Path from the receiver to its high switch
+            self.__nodes[receiver_id].add_event(FrameEvent(event.event_id, 'NotificationHS', event.time, size, path))
+
+            # Save the utilization and number of offsets in the database
+            self.__save_utilization_database(event.event_id)
+            self.__save_num_offsets_database(event.event_id)
+
+        else:
+            raise ValueError('Internal Event not recognized')
 
     def __select_next_event(self) -> Tuple[Union[FrameEvent, ExecutionEvent, InternalEvent, None], int]:
         """
@@ -171,350 +467,6 @@ class Simulation:
         else:
             return self.__nodes[return_node_id].pop_next_event(), return_node_id
 
-    def __simulate_frame_event(self, event: FrameEvent, node_id: int) -> None:
-        """
-        Check which frame event is and simulate it
-        :param event: event to simulate
-        :param node_id: node id of the event to simulate
-        :return: nothing
-        """
-        if event.name in [FrameEvent.FrameName.Notification, FrameEvent.FrameName.FindingPath]:
-            self.__simulate_broadcast_frame(event, node_id)
-        elif event.name in [FrameEvent.FrameName.NotifyPath, FrameEvent.FrameName.Membership,
-                            FrameEvent.FrameName.Patch, FrameEvent.FrameName.UpdatePatch,
-                            FrameEvent.FrameName.Optimization, FrameEvent.FrameName.UpdateOptimization,
-                            FrameEvent.FrameName.Schedule]:
-            self.__simulate_single_frame(event, node_id)
-
-    def __simulate_internal_event(self, event: InternalEvent) -> None:
-        """
-        Simulate an internal such as a component failure
-        :param event: event to simulate
-        :return: nothing
-        """
-        if event.name is InternalEvent.InternalName.LinkFailure:
-            receiver_id = self.__network.get_receiver_id_link(event.event_id)
-            self.__activator[event.event_id] = receiver_id
-            sender_id = self.__network.get_sender_id_link(event.event_id)
-            self.__leader[event.event_id] = sender_id
-            self.__network.remove_link(event.event_id)
-
-            if self.__network.get_num_offsets(event.event_id) == 0:     # Nothing to do if there are no transmissions
-                return
-
-            # Create the paths to communicate between leader and member nodes
-            try:
-                self.__path_activator[event.event_id] = self.__network.get_shortest_path(sender_id, receiver_id)
-            except ValueError:
-                self.__successful_heal[event.event_id] = False
-                raise Simulation.NoPath('The link failure cannot be repaired as there is no path to connect')
-            try:
-                self.__path_leader[event.event_id] = self.__network.get_shortest_path(receiver_id, sender_id)
-                self.__successful_heal[event.event_id] = False
-            except ValueError:
-                raise Simulation.NoPath('The link failure cannot be repaired as there is no path to connect')
-            # We remove the first node of every path to avoid duplicates
-            self.__path_member[event.event_id] = list(self.__path_activator[event.event_id][1:])
-            self.__path_member[event.event_id].extend(list(self.__path_leader[event.event_id][1:]))
-
-            self.__nodes[receiver_id].add_event(FrameEvent(event.event_id, 'Notification', event.time,
-                                                           self.__SIZE_CODE_LINK + self.__SIZE_CODE_FRAME))
-
-            # Save the utilization
-            self.__save_utilization_database(event.event_id)
-
-            # Save the number of offsets
-            self.__save_num_offsets_database(event.event_id)
-
-        else:
-            raise ValueError('Internal Event not recognized')
-
-    def __simulate_execution_event(self, event: ExecutionEvent, node_id: int) -> None:
-        """
-        Check which execution event is and simulate it
-        :param event: event to simulate
-        :param node_id: node id of the event to simulate
-        :return: nothing
-        """
-        if event.name is ExecutionEvent.ExecutionName.Patch:
-            index_receiver = self.__path_activator[event.event_id].index(node_id) + 1
-            link, link_id = self.__network.get_link_data(node_id, self.__path_activator[event.event_id][index_receiver])
-
-            patch_file = '../Files/Outputs/Patch_' + str(event.event_id) + '_' + str(node_id) + '.xml'
-            patched_file = '../Files/Outputs/PatchedSchedule_' + str(event.event_id) + '_' + str(node_id) + '.xml'
-            execution_file = '../Files/Outputs/Execution.xml'
-
-            self.__write_patch_xml(patch_file, link, link_id, node_id, event.event_id)
-            run(['./../Files/Executables/Patch', patch_file, patched_file, execution_file])
-            remove(patch_file)
-
-            self.__read_execution_time_xml(execution_file)
-            self.__patching_time[event.event_id][link_id] = self.__execution_time
-            remove(execution_file)
-
-            if isfile(patched_file):
-
-                self.__read_patched_schedule_xml(patched_file, event.event_id)
-                remove(patched_file)
-
-                # Send the Patch frame and start the optimization
-                self.__nodes[node_id].add_event(FrameEvent(event.event_id, FrameEvent.FrameName.Schedule, event.time +
-                                                           self.__execution_time + self.__SCHEDULE_PROC_TIME, 0))
-
-                self.__nodes[node_id].add_event(FrameEvent(event.event_id, FrameEvent.FrameName.Patch,
-                                                           event.time + self.__execution_time + self.__PATCH_PROC_TIME,
-                                                           self.__size_core_frame[event.event_id] + 1))
-
-            self.__nodes[node_id].add_event(ExecutionEvent(event.event_id, ExecutionEvent.ExecutionName.Optimize,
-                                                           event.time + self.__execution_time))
-
-        elif event.name is ExecutionEvent.ExecutionName.Optimize:
-            index_receiver = self.__path_activator[event.event_id].index(node_id) + 1
-            link, link_id = self.__network.get_link_data(node_id, self.__path_activator[event.event_id][index_receiver])
-
-            optimize_file = '../Files/Outputs/Optimize_' + str(event.event_id) + '_' + str(node_id) + '.xml'
-            optimized_file = '../Files/Outputs/OptimizedSchedule_' + str(event.event_id) + '_' + str(node_id) + '.xml'
-            execution_file = '../Files/Outputs/Execution.xml'
-
-            self.__write_optimize_xml(optimize_file, link, link_id, node_id, event.event_id)
-            run(['./../files/Executables/Optimize', optimize_file, optimized_file, execution_file])
-            remove(optimize_file)
-
-            self.__read_execution_time_xml(execution_file)
-            self.__optimization_L1_time[event.event_id][link_id] = self.__execution_time
-            remove(execution_file)
-
-            # If the optimize was successful, read the optimized schedule, otherwise try optimize L2
-            if isfile(optimized_file):
-                self.__read_patched_schedule_xml(optimized_file, event.event_id)
-                remove(optimized_file)
-
-            else:
-                self.__write_optimize_l2_xml(optimize_file, link, link_id, node_id, event.event_id)
-                run(['./../files/Executables/Optimize', optimize_file, optimized_file, execution_file])
-                remove(optimize_file)
-
-                # Add the execution time of the failed attempt at optimization level 1
-                before_exec_time = self.__execution_time
-                self.__read_execution_time_xml(execution_file)
-                self.__optimization_L2_time[event.event_id][link_id] = self.__execution_time
-                self.__execution_time += before_exec_time
-                remove(execution_file)
-
-                if not isfile(optimized_file):
-                    self.__successful_heal[event.event_id] = False
-                    raise Simulation.NoSchedule('Error Repairing the link ' + str(event.event_id))
-
-                self.__read_patched_schedule_xml(optimized_file, event.event_id)
-                remove(optimized_file)
-
-            self.__nodes[node_id].add_event(FrameEvent(event.event_id, FrameEvent.FrameName.Schedule, event.time +
-                                                       self.__execution_time + self.__SCHEDULE_PROC_TIME, 0))
-
-            self.__nodes[node_id].add_event(FrameEvent(event.event_id, FrameEvent.FrameName.Optimization,
-                                                       event.time + self.__execution_time + self.__OPTIMIZE_PROC_TIME,
-                                                       self.__size_core_frame[event.event_id] + 1))
-
-        else:
-            raise ValueError('Execution Event not recognized')
-
-    def __simulate_single_frame(self, event: FrameEvent, node_id: int) -> None:
-
-        # If the frame is a notify path, follow the path activator to leader
-        if event.name is FrameEvent.FrameName.NotifyPath:
-            # If the frame is still on its way
-            index_path = self.__path_leader[event.event_id].index(node_id)
-            if index_path + 1 < len(self.__path_leader[event.event_id]):
-                receiver_id = self.__path_leader[event.event_id][index_path + 1]
-                processing_time = self.__FINDING_PATH_PROC_TIME
-                size = event.size
-            else:
-                self.__size_core_frame[event.event_id] = event.size
-                # The frame has arrived its destination, so it starts a membership frame
-                # We need to calculate the size of the membership message as the number of frames in the affected link
-                num_frames = len([frame_id for frame_id, _, _ in self.__network.get_offsets_by_link(event.event_id)])
-                size = event.size + (num_frames * 2 * self.__SIZE_CODE_FRAME_ID * self.__SIZE_CODE_INST)
-                self.__size_member_frame[event.event_id] = size
-
-                self.__nodes[node_id].add_event(FrameEvent(event.event_id, FrameEvent.FrameName.Membership,
-                                                           event.time + self.__MEMBERSHIP_PROC_TIME, size))
-                return
-
-        elif event.name is FrameEvent.FrameName.Membership:
-
-            # If the frame is still on its way
-            index_path = self.__path_activator[event.event_id].index(node_id)
-            if index_path + 1 < len(self.__path_activator[event.event_id]):
-                receiver_id = self.__path_activator[event.event_id][index_path + 1]
-                processing_time = self.__MEMBERSHIP_PROC_TIME
-                size = event.size
-
-                # The solving does not have to be called for the activator node as it doesnt need to patch any link
-                self.__nodes[node_id].add_event(ExecutionEvent(event.event_id, ExecutionEvent.ExecutionName.Patch,
-                                                               event.time + processing_time))
-
-            else:  # The frame has arrived its destination
-                return
-
-        elif event.name is FrameEvent.FrameName.Patch:
-            # Finds the last index path
-            index_path = [it for it, i in enumerate(self.__path_member[event.event_id]) if i == node_id][-1]
-            if index_path + 1 < len(self.__path_member[event.event_id]):
-                receiver_id = self.__path_member[event.event_id][index_path + 1]
-                processing_time = self.__PATCH_PROC_TIME
-                size = event.size
-            else:
-                self.__check_patching_status(event.event_id, event.time)
-                return
-
-        elif event.name is FrameEvent.FrameName.UpdatePatch:
-            index_path = self.__path_activator[event.event_id].index(node_id)
-            if index_path + 1 < len(self.__path_activator[event.event_id]):
-                receiver_id = self.__path_activator[event.event_id][index_path + 1]
-                processing_time = self.__UPDATE_PROC_TIME
-                size = event.size
-            else:
-                return
-
-        elif event.name is FrameEvent.FrameName.Optimization:
-            # Finds the last index path
-            index_path = [it for it, i in enumerate(self.__path_member[event.event_id]) if i == node_id][-1]
-            if index_path + 1 < len(self.__path_member[event.event_id]):
-                receiver_id = self.__path_member[event.event_id][index_path + 1]
-                processing_time = self.__OPTIMIZE_PROC_TIME
-                size = event.size
-            else:
-                self.__check_optimization_status(event.event_id, event.time)
-                return
-
-        elif event.name is FrameEvent.FrameName.UpdateOptimization:
-            index_path = self.__path_activator[event.event_id].index(node_id)
-            if index_path + 1 < len(self.__path_activator[event.event_id]):
-                receiver_id = self.__path_activator[event.event_id][index_path + 1]
-                processing_time = self.__UPDATE_PROC_TIME
-                size = event.size
-            else:
-                return
-
-        elif event.name is FrameEvent.FrameName.Schedule:
-            if event.size == 0:
-                index_path = self.__path_activator[event.event_id].index(node_id)
-                receiver_id = self.__path_activator[event.event_id][index_path + 1]
-                processing_time = self.__UPDATE_PROC_TIME
-                size = self.__SIZE_CODE_LINK + self.__SIZE_CODE_FRAME + self.__size_member_frame[event.event_id]
-            else:
-                return
-
-        else:
-            raise ValueError('We do not support the given frame event')
-
-        link, link_id = self.__network.get_link_data(node_id, receiver_id)
-        time_event = self.__find_time_event(event.time, size, event.name, link, link_id, processing_time)
-
-        # Add the event
-        self.__nodes[receiver_id].add_event(FrameEvent(event.event_id, event.name, time_event, size))
-
-    def __simulate_broadcast_frame(self, event: FrameEvent, node_id: int) -> None:
-        """
-        Simulate all the broadcast frame events, it also activates the new events if a node receives the broadcast
-        frame that it is intended to itself
-        :param event: event to simulate
-        :param node_id: node id of the event to simulate
-        :return: nothing
-        """
-        # If the node activator receives a finding path frame for him, stop the finding path process and send a
-        # notify path with a single frame with already known path
-        if event.name is FrameEvent.FrameName.FindingPath and node_id == self.__activator[event.event_id]:
-            process_time = self.__NOTIFY_PATH_PROC_TIME
-            name = FrameEvent.FrameName.NotifyPath
-            size = self.__SIZE_CODE_LINK + event.size
-            self.__nodes[node_id].add_event(FrameEvent(event.event_id, name, event.time + process_time, size))
-            return
-
-        # If the node receives a notification frame for him and has to start the finding path process
-        elif event.name is FrameEvent.FrameName.Notification and node_id == self.__leader[event.event_id]:
-            process_time = self.__FINDING_PATH_PROC_TIME
-            size = self.__SIZE_CODE_LINK + event.size
-            name = FrameEvent.FrameName.FindingPath
-            self.__nodes[node_id].add_found_event(event.event_id)
-
-        # If the node receives a finding path frame that has to broadcast
-        elif event.name is FrameEvent.FrameName.FindingPath:
-            process_time = self.__FINDING_PATH_PROC_TIME
-            size = self.__SIZE_CODE_LINK + event.size
-            name = event.name
-
-        # If the node receives a notification frame that has to broadcast
-        elif event.name is FrameEvent.FrameName.Notification:
-            process_time = self.__NOTIFICATION_PROC_TIME
-            size = self.__SIZE_CODE_LINK + event.size
-            name = event.name
-
-        else:
-            raise ValueError('We do not support the given frame event')
-
-        # The node receives the notification frame and has to broadcast the frame
-        receivers_id = self.__network.get_neighbors_ids_by_node(node_id)
-        for receiver_id in receivers_id:
-
-            link, link_id = self.__network.get_link_data(node_id, receiver_id)
-            time_event = self.__find_time_event(event.time, size, name, link, link_id, process_time)
-
-            # Add the event
-            self.__nodes[receiver_id].add_event(FrameEvent(event.event_id, name, time_event, size))
-
-    def __check_patching_status(self, event_id: int, time: int) -> None:
-        """
-        After a patching frame has been received, check if all the patch were received to start the update step
-        :param event_id: event identifier
-        :param time: time to check status
-        :return: nothing
-        """
-        # Update the number of patched received by the leader
-        if event_id not in self.__patching_status.keys():
-            self.__patching_status[event_id] = 1
-        else:
-            self.__patching_status[event_id] += 1
-
-        # Check if all patching status were received, if it was, start the update event
-        # Also, update the paths of all the frames affected
-        if self.__patching_status[event_id] == (len(self.__path_activator[event_id]) - 1):
-            # Calculate the path to activator from nodes identifiers to link identifiers
-            new_path = []
-            for node_it in range(len(self.__path_activator[event_id]) - 1):
-                new_path.append(self.__network.get_link_data(self.__path_activator[event_id][node_it],
-                                                             self.__path_activator[event_id][node_it + 1])[1])
-
-            for frame in self.__network.frames.values():
-                frame.exchange_path(event_id, new_path)
-
-            self.__nodes[self.__leader[event_id]].add_event(FrameEvent(event_id, FrameEvent.FrameName.UpdatePatch,
-                                                                       time + self.__UPDATE_PROC_TIME,
-                                                                       self.__size_core_frame[event_id] +
-                                                                       self.__SIZE_CODE_TRANS))
-
-    def __check_optimization_status(self, event_id: int, time: int) -> None:
-        """
-        After a optimization frame has been received, check if all the patch were received to start the update step
-        :param event_id: event identifier
-        :param time: time to check status
-        :return: nothing
-        """
-        # Update the number of patched received by the leader
-        if event_id not in self.__optimization_status.keys():
-            self.__optimization_status[event_id] = 1
-        else:
-            self.__optimization_status[event_id] += 1
-
-        # Check if all optimization status were received, if it was, start the update event
-        if self.__optimization_status[event_id] == (len(self.__path_activator[event_id]) - 1):
-            self.__network.update_utilization()     # We also update the utilization of the network
-            self.__nodes[self.__leader[event_id]].add_event(FrameEvent(event_id,
-                                                                       FrameEvent.FrameName.UpdateOptimization,
-                                                                       time + self.__UPDATE_PROC_TIME,
-                                                                       self.__size_core_frame[event_id] +
-                                                                       self.__SIZE_CODE_TRANS))
-
     def __find_time_event(self, time: int, size: int, name: FrameEvent.FrameName, link: Link, link_id: int,
                           process_time: int) -> int:
         """
@@ -528,8 +480,8 @@ class Simulation:
         :return: the time when the receiver node can send the next event
         """
 
-        time_data = int(size * 1000 / 8 / link.speed)     # Time to transmit the data
-        starting = time                                   # Time when the event starts
+        time_data = int(size * 1000 / 8 / link.speed)  # Time to transmit the data
+        starting = time  # Time when the event starts
 
         # If the frame starts outside the reservation window
         if starting % self.__protocol.period > self.__protocol.time:
@@ -553,6 +505,8 @@ class Simulation:
         # While the frame ends outside the reservation window, divide it
         while (starting + time_data) % self.__protocol.period > self.__protocol.time:
             time_event = (starting + time_data) - ((starting + time_data) % self.__protocol.time)
+            time_event -= (floor((time_event % self.__protocol.period) /
+                                 self.__protocol.time) - 1) * self.__protocol.time
 
             # If we still did not transmit all the date, add to the link usage
             if starting != time_event:
@@ -571,7 +525,7 @@ class Simulation:
         else:
             self.__link_usage[link_id] = [(name.name, starting, starting + time_data)]
 
-        self.__link_usage[link_id].sort(key=itemgetter(1))      # Sort for a more easy pretty printing
+        self.__link_usage[link_id].sort(key=itemgetter(1))  # Sort for a more easy pretty printing
         return starting + time_data + process_time
 
     def __test_link_usage(self) -> None:
@@ -603,27 +557,20 @@ class Simulation:
         # We also init the execution time outputs
         self.__successful_heal[broken_link_id] = True
         self.__patching_time[broken_link_id] = {}
-        self.__optimization_L1_time[broken_link_id] = {}
-        self.__optimization_L2_time[broken_link_id] = {}
+        self.__optimize_time[broken_link_id] = {}
 
+        # Add utilization
         try:
             self.__utilization_broken_link[broken_link_id] = self.__network.link_utilization[broken_link_id]
         except KeyError:
             self.__utilization_broken_link[broken_link_id] = 0.0
         self.__utilization_new_path[broken_link_id] = {}
-        for index_path, _ in enumerate(self.__path_activator[broken_link_id][:-1]):
-            sender_id = self.__path_activator[broken_link_id][index_path]
-            receiver_id = self.__path_activator[broken_link_id][index_path + 1]
-            _, link_id = self.__network.get_link_data(sender_id, receiver_id)
+        for link_id in self.__new_path_links[broken_link_id]:
             try:
                 link_ut = self.__network.link_utilization[link_id]
             except KeyError:
                 link_ut = 0.0
             self.__utilization_new_path[broken_link_id][link_id] = link_ut
-
-            self.__patching_time[broken_link_id][link_id] = 0
-            self.__optimization_L1_time[broken_link_id][link_id] = 0
-            self.__optimization_L2_time[broken_link_id][link_id] = 0
 
     def __save_num_offsets_database(self, broken_link_id: int) -> None:
         """
@@ -633,13 +580,10 @@ class Simulation:
         """
         self.__offsets_broken_link[broken_link_id] = self.__network.get_num_offsets(broken_link_id)
         self.__offsets_new_path[broken_link_id] = {}
-        for index_path, _ in enumerate(self.__path_activator[broken_link_id][:-1]):
-            sender_id = self.__path_activator[broken_link_id][index_path]
-            receiver_id = self.__path_activator[broken_link_id][index_path + 1]
-            _, link_id = self.__network.get_link_data(sender_id, receiver_id)
+        for link_id in self.__new_path_links[broken_link_id]:
             self.__offsets_new_path[broken_link_id][link_id] = self.__network.get_num_offsets(link_id)
 
-    # Simulation Functions #
+    # Simulate Functions #
 
     def simulate(self) -> None:
         """
@@ -649,103 +593,25 @@ class Simulation:
         event, node_id = self.__select_next_event()
         # While there are events to simulate, keep simulating
         while event is not None:
-            if type(event) is FrameEvent:
+            if type(event) is InternalEvent:
+                self.__simulate_internal_event(event)
+
+            elif type(event) is FrameEvent:
                 self.__simulate_frame_event(event, node_id)
 
             elif type(event) is ExecutionEvent:
                 self.__simulate_execution_event(event, node_id)
 
-            elif type(event) is InternalEvent:
-                self.__simulate_internal_event(event)
+            else:
+                raise ValueError('Event not recognized')
 
             event, node_id = self.__select_next_event()
+
+        # Test everything done was correct and there are no collisions in the schedule or the protocol bandwidth
         self.__test_link_usage()
         self.__network.check_schedule()
-        self.__write_database()
 
-    # Input Functions #
-
-    def read_simulation_xml(self, configuration_file: str) -> None:
-        """
-        Read the simulation configuration to execute
-        :param configuration_file: name and path of the xml configuration file
-        :return: nothing
-        """
-        # Open the xml file and get the root
-        root_xml = Xml.parse(configuration_file).getroot()
-        simulation_xml: Xml.Element = root_xml.find('Simulation')
-
-        # Read the data and save it
-        self.__read_general_information_xml(simulation_xml.find('GeneralInformation'))
-        self.__read_events_xml(simulation_xml.find('Events'))
-
-        self.__prepare_simulation()
-
-    def __read_general_information_xml(self, general_info_xml: Xml.Element) -> None:
-        """
-        Read the general information of the simulation
-        :param general_info_xml: pointer to the general information xml tree
-        :return: nothing
-        """
-        self.__algorithm = self.Algorithm[general_info_xml.find('Algorithm').text]
-        self.__add_database = True if general_info_xml.find('AddDatabase').text == '1' else False
-
-    def __read_events_xml(self, events_xml: Xml.Element) -> None:
-        """
-        Read the events to simulate
-        :param events_xml: pointer to the events information xml tree
-        :return: nothing
-        """
-        # For all events, save it into the event simulator
-        for failure_xml in events_xml.findall('Failure'):   # type: Xml.Element
-            component_type = self.EventsStarters.Component[failure_xml.attrib['component']]
-            component_id = int(failure_xml.find('ID').text)
-            time_xml: Xml.Element = failure_xml.find('Time')
-            event_time = Network.TimeUnit.convert_ns(int(time_xml.text), time_xml.attrib['unit'])
-
-            self.__events.append(self.EventsStarters(component_type, component_id, event_time))
-
-        # Sort the events queue by time
-        self.__events = sorted(self.__events, key=attrgetter('time'))
-
-    def __read_patched_schedule_xml(self, patched_file: str, broken_link: int) -> None:
-        """
-        Read and save the patched schedule
-        :param patched_file: file and path of the patched file
-        :param broken_link: broken link identifier
-        :return: nothing
-        """
-        # Open the xml file and get the root
-        root_xml: Xml.Element = Xml.parse(patched_file).getroot()
-
-        # Read the link identifier of the path
-        patched_link = int(root_xml.find('GeneralInformation/LinkID').text)
-
-        # Read all the transmissions of all the patched frames and save them into the frame
-        frames = self.__network.frames
-        for frame_xml in root_xml.findall('TrafficInformation/Frame'):    # type: Xml.Element
-            frame_id = int(frame_xml.find('FrameID').text)
-
-            frames[frame_id].add_offset(patched_link)
-            frames[frame_id].prepare_link_offset(patched_link, frames[frame_id].offsets[broken_link].num_instances, 0)
-
-            for instance, instance_xml in enumerate(frame_xml.findall('Instance')):
-                transmission_time = int(instance_xml.find('TransmissionTime').text) * self.__network.time_slot_size
-                ending_time = int(instance_xml.find('EndingTime').text) * self.__network.time_slot_size
-
-                frames[frame_id].set_offset_transmission_time(patched_link, instance, 0, transmission_time)
-                frames[frame_id].set_offset_ending_time(patched_link, instance, 0, ending_time)
-
-    def __read_execution_time_xml(self, execution_file: str) -> None:
-        """
-        Read the execution of the last algorithm called
-        :param execution_file: path and name of the execution file
-        :return: nothing
-        """
-        # Open the xml file and get the root
-        root_xml: Xml.Element = Xml.parse(execution_file).getroot()
-
-        self.__execution_time = int(root_xml.find('Timing/ExecutionTime').text)
+        # Write the simulation instance
 
     # Output Functions #
 
@@ -772,10 +638,8 @@ class Simulation:
         :param link_id: link to extract fixed transmissions
         :return: nothing
         """
-
         # For all the transmission in the given link, write their information
         for frame_id, frame, offset in self.__network.get_offsets_by_link(link_id):
-
             # Ignore if the offset received is not in the list of paths, as we understand that we eliminated it
             links_all_paths = [link_path for receiver_id in frame.receivers_id for link_path in
                                frame.get_path(receiver_id)]
@@ -784,7 +648,8 @@ class Simulation:
                 frame_xml: Xml.Element = Xml.SubElement(fixed_traffic, 'Frame')
                 Xml.SubElement(frame_xml, 'FrameID').text = str(frame_id)
                 Xml.SubElement(frame_xml, 'Period').text = str(int(frame.period / self.__network.time_slot_size))
-                Xml.SubElement(frame_xml, 'Deadline').text = str(int(frame.deadline / self.__network.time_slot_size))
+                Xml.SubElement(frame_xml, 'Deadline').text = str(int(frame.deadline /
+                                                                     self.__network.time_slot_size))
                 Xml.SubElement(frame_xml, 'Size').text = str(frame.size)
                 Xml.SubElement(frame_xml, 'StartingTime').text = str(int(frame.starting_time /
                                                                          self.__network.time_slot_size))
@@ -799,73 +664,32 @@ class Simulation:
                     Xml.SubElement(instance_xml, 'EndingTime').text = str(int(offset.get_ending_time(instance, 0) /
                                                                               self.__network.time_slot_size))
 
-    def __write_patch_traffic_xml(self, traffic: Xml.Element, broken_link_id: int, node_id: int) -> None:
+    def __write_patch_traffic_xml(self, traffic: Xml.Element, link: Link, link_id: int,
+                                  ranges: Dict[int, List[List[int]]]) -> None:
         """
         Write the traffic to patch with the available ranges
         :param traffic: pointer to the traffic xml tree
-        :param broken_link_id: broken link identifier
-        :param node_id: node that has to patch identifier
+        :param link: link where the new traffic is transmitted
+        :param link_id: link to patch
+        :param ranges: dictionary with all the frame ids to add and its transmission ranges
         :return: nothing
         """
+        already_frame_id: List[int] = []
+        for frame_id, _, _ in self.__network.get_offsets_by_link(link_id):
+            already_frame_id.append(frame_id)
 
         # For all the transmission in the broken link, create their available ranges in the link
-        for frame_id, frame, offset in self.__network.get_offsets_by_link(broken_link_id):
+        for frame_id, transmission_ranges in ranges.items():
 
-            # Obtain the available transmission range and divide it depending on the position of the link
-            last_link_path = self.__network.get_link_data(self.__path_activator[broken_link_id][-2],
-                                                          self.__path_activator[broken_link_id][-1])[1]
-            transmission_range = self.__network.get_available_transmission_range(frame, offset, broken_link_id,
-                                                                                 last_link_path)
-            position_path = self.__path_activator[broken_link_id].index(node_id)
-            for current_range in transmission_range:
-                transmission_length = current_range[1] - current_range[0]
-                current_range[1] = int((position_path + 1) * (transmission_length /
-                                       len(self.__path_activator[broken_link_id]) - 1) + current_range[0] - 1)
-                current_range[0] = int(position_path * (transmission_length /
-                                                        len(self.__path_activator[broken_link_id])) + current_range[0])
-                # Take into account the switch time for the different hops in the path
-                current_range[0] += self.__network.minimum_switch_time
+            if frame_id in already_frame_id:
+                # print('Take care of this case, a frame that needs to be patched is already fixed')
+                pass
 
-            # Get the speed of the link of the new link transmission to calculate the time to transmit
-            link, _ = self.__network.get_link_data(node_id, self.__path_activator[broken_link_id][position_path + 1])
+            frame = self.__network.frames[frame_id]
+
             time_transmission = int((frame.size * 1000 / link.speed) / self.__network.time_slot_size)
 
-            frame_xml: Xml.Element = Xml.SubElement(traffic, 'Frame')
-            Xml.SubElement(frame_xml, 'FrameID').text = str(frame_id)
-            Xml.SubElement(frame_xml, 'Period').text = str(int(frame.period / self.__network.time_slot_size))
-            Xml.SubElement(frame_xml, 'Deadline').text = str(int(frame.deadline / self.__network.time_slot_size))
-            Xml.SubElement(frame_xml, 'Size').text = str(frame.size)
-            Xml.SubElement(frame_xml, 'StartingTime').text = str(int(frame.starting_time /
-                                                                     self.__network.time_slot_size))
-            Xml.SubElement(frame_xml, 'EndToEndDelay').text = str(int(frame.end_to_end / self.__network.time_slot_size))
-            offset_xml: Xml.Element = Xml.SubElement(frame_xml, 'Offset')
-            for instance in range(offset.num_instances):
-                Xml.SubElement(offset_xml, 'TimeSlots').text = str(time_transmission)
-                instance_xml: Xml.Element = Xml.SubElement(offset_xml, 'Instance')
-                Xml.SubElement(instance_xml, 'NumInstance').text = str(instance)
-                Xml.SubElement(instance_xml, 'MinTransmission').text = str(transmission_range[instance][0])
-                Xml.SubElement(instance_xml, 'MaxTransmission').text = str(transmission_range[instance][1])
-
-    def __write_reallocated_traffic_xml(self, traffic: Xml.Element, broken_link_id: int, node_id: int):
-        """
-        Write the traffic to reallocate to try to get a better solution with the available ranges
-        :param traffic: pointer to the traffic xml tree
-        :param broken_link_id: broken link identifier
-        :param node_id: node that has to patch identifier
-        :return: nothing
-        """
-
-        # For all the transmission in the broken link, create their available ranges in the link
-        position_path = self.__path_activator[broken_link_id].index(node_id)
-        link, link_id = self.__network.get_link_data(node_id, self.__path_activator[broken_link_id][position_path + 1])
-        frame_id_affected = [frame_id for frame_id, _, _ in self.__network.get_offsets_by_link(broken_link_id)]
-        for frame_id, frame, offset in self.__network.get_offsets_by_link(link_id):
-
-            if frame_id not in frame_id_affected:
-
-                # Remember that for reallocated traffic we do not change the path, so the new path is the same link
-                transmission_range = self.__network.get_available_transmission_range(frame, offset, link_id, link_id)
-                time_transmission = int((frame.size * 1000 / link.speed) / self.__network.time_slot_size)
+            if link_id not in frame.offsets.keys():
 
                 frame_xml: Xml.Element = Xml.SubElement(traffic, 'Frame')
                 Xml.SubElement(frame_xml, 'FrameID').text = str(frame_id)
@@ -877,21 +701,20 @@ class Simulation:
                 Xml.SubElement(frame_xml, 'EndToEndDelay').text = str(int(frame.end_to_end /
                                                                           self.__network.time_slot_size))
                 offset_xml: Xml.Element = Xml.SubElement(frame_xml, 'Offset')
-                for instance in range(offset.num_instances):
+                for instance in range(len(transmission_ranges)):
                     Xml.SubElement(offset_xml, 'TimeSlots').text = str(time_transmission)
                     instance_xml: Xml.Element = Xml.SubElement(offset_xml, 'Instance')
                     Xml.SubElement(instance_xml, 'NumInstance').text = str(instance)
-                    Xml.SubElement(instance_xml, 'MinTransmission').text = str(transmission_range[instance][0])
-                    Xml.SubElement(instance_xml, 'MaxTransmission').text = str(transmission_range[instance][1])
+                    Xml.SubElement(instance_xml, 'MinTransmission').text = str(transmission_ranges[instance][0])
+                    Xml.SubElement(instance_xml, 'MaxTransmission').text = str(transmission_ranges[instance][1])
 
-    def __write_patch_xml(self, patch_file: str, link: Link, link_id: int, node_id: int, broken_link: int) -> None:
+    def __write_patch_xml(self, patch_file: str, link: Link, link_id: int, ranges: Dict[int, List[List[int]]]) -> None:
         """
         For the given file, write the patch xml file for the scheduler to solve
         :param patch_file: file and path of the patch file
         :param link: information of the link to patch
         :param link_id: link to patch
-        :param node_id: node solving the path
-        :param broken_link link identifier of the broken link id
+        :param ranges: dictionary with all the frame ids to add and its transmission ranges
         :return: nothing
         """
         top_xml = Xml.Element('Patch')
@@ -899,7 +722,7 @@ class Simulation:
         # Write the general information, the fix traffic and the traffic to patch
         self.__write_patch_general_information_xml(Xml.SubElement(top_xml, 'GeneralInformation'), link, link_id)
         self.__write_patch_fixed_traffic_xml(Xml.SubElement(top_xml, 'FixedTraffic'), link_id)
-        self.__write_patch_traffic_xml(Xml.SubElement(top_xml, 'Traffic'), broken_link, node_id)
+        self.__write_patch_traffic_xml(Xml.SubElement(top_xml, 'Traffic'), link, link_id, ranges)
 
         # Write the final file
         output_xml = minidom.parseString(Xml.tostring(top_xml)).toprettyxml(encoding="UTF-8", indent="    ")
@@ -907,15 +730,14 @@ class Simulation:
         with open(patch_file, "w") as f:
             f.write(output_xml)
 
-    def __write_optimize_xml(self, optimize_file: str, link: Link, link_id: int, node_id: int,
-                             broken_link: int) -> None:
+    def __write_optimize_xml(self, patch_file: str, link: Link, link_id: int,
+                             ranges: Dict[int, List[List[int]]]) -> None:
         """
-        For the given file, write the patch xml file for the scheduler to solve
-        :param optimize_file: file and path of the patch file
+        For the given file, write the optimize xml file for the scheduler to solve
+        :param patch_file: file and path of the patch file
         :param link: information of the link to patch
         :param link_id: link to patch
-        :param node_id: node solving the path
-        :param broken_link link identifier of the broken link id
+        :param ranges: dictionary with all the frame ids to add and its transmission ranges
         :return: nothing
         """
         top_xml = Xml.Element('Optimize')
@@ -923,65 +745,118 @@ class Simulation:
         # Write the general information, the fix traffic and the traffic to patch
         self.__write_patch_general_information_xml(Xml.SubElement(top_xml, 'GeneralInformation'), link, link_id)
         self.__write_patch_fixed_traffic_xml(Xml.SubElement(top_xml, 'FixedTraffic'), link_id)
-        self.__write_patch_traffic_xml(Xml.SubElement(top_xml, 'Traffic'), broken_link, node_id)
+        self.__write_patch_traffic_xml(Xml.SubElement(top_xml, 'Traffic'), link, link_id, ranges)
 
         # Write the final file
         output_xml = minidom.parseString(Xml.tostring(top_xml)).toprettyxml(encoding="UTF-8", indent="    ")
         output_xml = output_xml.decode("utf-8")
-        with open(optimize_file, "w") as f:
+        with open(patch_file, "w") as f:
             f.write(output_xml)
 
-    def __write_optimize_l2_xml(self, optimize_file: str, link: Link, link_id: int, node_id: int,
-                                broken_link: int) -> None:
+    def write_simulation_instance_xml(self, simulation_file: str) -> None:
         """
-        For the given file, write the patch xml file for the scheduler to solve
-        :param optimize_file: file and path of the patch file
-        :param link: information of the link to patch
-        :param link_id: link to patch
-        :param node_id: node solving the path
-        :param broken_link link identifier of the broken link id
+        Write interesting information of a simulation instance
+        :param simulation_file: path and name of the simulation instance
         :return: nothing
         """
-        top_xml = Xml.Element('Optimize')
+        top_xml = Xml.Element('SimulationInformation')
 
-        # Write the general information, the fix traffic and the traffic to patch
-        self.__write_patch_general_information_xml(Xml.SubElement(top_xml, 'GeneralInformation'), link, link_id)
-        Xml.SubElement(top_xml, 'FixedTraffic')
-        traffic_xml = Xml.SubElement(top_xml, 'Traffic')
-        self.__write_reallocated_traffic_xml(traffic_xml, broken_link, node_id)
-        self.__write_patch_traffic_xml(traffic_xml, broken_link, node_id)
+        # For all the failures
+        for it, link_id in enumerate(self.__time_started.keys()):
+            failure_xml = Xml.SubElement(top_xml, 'FailureInstance')
+            Xml.SubElement(failure_xml, 'Instance').text = str(it)
+            Xml.SubElement(failure_xml, 'Link').text = str(link_id)
 
-        # Write the final file
+            # No transmissions, the SHP does not get activated
+            if link_id in self.__no_transmission.keys():
+                Xml.SubElement(failure_xml, 'NoTransmission').text = '1'
+            else:
+                Xml.SubElement(failure_xml, 'NoTransmission').text = '0'
+                Xml.SubElement(failure_xml, 'TimeDetected').text = str(self.__time_started[link_id])
+                try:
+                    Xml.SubElement(failure_xml, 'Healed').text = '1' if self.__successful_heal[link_id] else '0'
+                except KeyError:
+                    Xml.SubElement(failure_xml, 'Healed').text = '0'
+                try:
+                    Xml.SubElement(failure_xml, 'NoPath').text = '1' if self.__no_path[link_id] else '0'
+                except KeyError:
+                    Xml.SubElement(failure_xml, 'NoPath').text = '0'
+                try:
+                    Xml.SubElement(failure_xml, 'NoSchedule').text = '1' if self.__no_schedule[link_id] else '0'
+                except KeyError:
+                    Xml.SubElement(failure_xml, 'NoSchedule').text = '0'
+                if link_id in self.__successful_heal.keys():
+                    try:
+                        Xml.SubElement(failure_xml, 'TimePatched').text = str(self.__time_patched[link_id])
+                    except KeyError:
+                        Xml.SubElement(failure_xml, 'TimePatched').text = '0'
+                    try:
+                        Xml.SubElement(failure_xml, 'TimeOptimized').text = str(self.__time_optimized[link_id])
+                    except KeyError:
+                        Xml.SubElement(failure_xml, 'TimeOptimized').text = '0'
+
+        # Write the temporal configuration file to obtain the network and schedule
         output_xml = minidom.parseString(Xml.tostring(top_xml)).toprettyxml(encoding="UTF-8", indent="    ")
         output_xml = output_xml.decode("utf-8")
-        with open(optimize_file, "w") as f:
+        with open(simulation_file, "w") as f:
             f.write(output_xml)
 
-    def __write_database(self) -> None:
+    def write_simulation_master_xml(self, simulation_file: str) -> None:
+        """
+        Write simulation files with interesting information.
+        Master simulation file has information valid for all the simulations
+        :param simulation_file: path and name of the simulation folder and name
+        :return: nothing
+        """
+        top_xml = Xml.Element('SimulationInformation')
+
+        # Write the utilization information
+        utilization_xml: Xml.Element = Xml.SubElement(top_xml, 'Utilization')
+        Xml.SubElement(utilization_xml, 'Overall').text = str(self.__network.utilization)
+        for link_id, utilization in self.__network.link_utilization.items():
+            link_utilization_xml: Xml.Element = Xml.SubElement(utilization_xml, 'LinkUtilization')
+            Xml.SubElement(link_utilization_xml, 'LinkID').text = str(link_id)
+            Xml.SubElement(link_utilization_xml, 'Utilization').text = str(utilization)
+
+        # Write the temporal configuration file to obtain the network and schedule
+        output_xml = minidom.parseString(Xml.tostring(top_xml)).toprettyxml(encoding="UTF-8", indent="    ")
+        output_xml = output_xml.decode("utf-8")
+        with open(simulation_file, "w") as f:
+            f.write(output_xml)
+
+    def __write_database(self, link_id: int) -> None:
         """
         Write into the csv database for learning purposes
+        :param link_id: id of the data to write
         :return: nothing
         """
         # Only do it if add database is true
         if self.__add_database:
 
             # Convert the outputs into a pandas data frame
-            output = {'Instance': [], 'Broken Link Utilization': [], 'Path Utilization': [], 'Broken Link Offsets': [],
-                      'Path Offsets': [], 'Successful': [], 'Patching Time': [], 'Optimization L1 Time': [],
-                      'Optimization L2 Time': []}
+            output = {'Instance': [], 'Broken Link Utilization': [], 'Path Utilization': [], 'Total Utilization': [],
+                      'Broken Link Offsets': [], 'Path Offsets': [], 'Total Offsets': [], 'Successful': [],
+                      'Patching Time': [], 'Optimization Time': [], 'Classification': []}
 
-            for link_id, utilization in self.__utilization_broken_link.items():
-                for path_link_id, utilization_path in self.__utilization_new_path[link_id].items():
-
-                    output['Instance'].append(1)
-                    output['Broken Link Utilization'].append(utilization)
-                    output['Path Utilization'].append(utilization_path)
-                    output['Broken Link Offsets'].append(self.__offsets_broken_link[link_id])
-                    output['Path Offsets'].append(self.__offsets_new_path[link_id][path_link_id])
-                    output['Successful'].append(self.__successful_heal[link_id])
+            for path_link_id, utilization_path in self.__utilization_new_path[link_id].items():
+                output['Instance'].append(1)
+                output['Broken Link Utilization'].append(self.__utilization_broken_link[link_id])
+                output['Path Utilization'].append(utilization_path)
+                output['Total Utilization'].append(utilization_path + self.__utilization_broken_link[link_id])
+                output['Broken Link Offsets'].append(self.__offsets_broken_link[link_id])
+                output['Path Offsets'].append(self.__offsets_new_path[link_id][path_link_id])
+                output['Total Offsets'].append(self.__offsets_broken_link[link_id] +
+                                               self.__offsets_new_path[link_id][path_link_id])
+                output['Successful'].append(self.__successful_heal[link_id])
+                if self.__successful_heal[link_id]:
                     output['Patching Time'].append(self.__patching_time[link_id][path_link_id])
-                    output['Optimization L1 Time'].append(self.__optimization_L1_time[link_id][path_link_id])
-                    output['Optimization L2 Time'].append(self.__optimization_L2_time[link_id][path_link_id])
+                    output['Optimization Time'].append(self.__optimize_time[link_id][path_link_id])
+                    out = 2 if self.__optimize_time[link_id][path_link_id] > self.__time_classification else 1
+                    output['Classification'].append(out)
+                else:
+                    output['Patching Time'].append(self.__patching_time[link_id][path_link_id])
+                    output['Optimization Time'].append(self.__optimize_time[link_id][path_link_id])
+                    output['Classification'].append(0)
 
             data = pandas.DataFrame(output)
 
@@ -992,3 +867,115 @@ class Simulation:
             else:
                 with open('../Files/Database/Database.csv', 'w') as database_file:
                     data.to_csv(database_file, index=False)
+
+    # Input Functions #
+
+    def read_simulation_xml(self, configuration_file: str) -> None:
+        """
+        Read the simulation configuration to execute
+        :param configuration_file: name and path of the xml configuration file
+        :return: nothing
+        """
+        # Open the xml file and get the root
+        root_xml = Xml.parse(configuration_file).getroot()
+        simulation_xml: Xml.Element = root_xml.find('Simulation')
+
+        # Read the data and save it
+        self.__read_general_information_xml(simulation_xml.find('GeneralInformation'))
+        self.__add_database = True if simulation_xml.find('AddDatabase').text == '1' else False
+        self.__read_events_xml(simulation_xml.find('Events'))
+
+        self.__prepare_simulation()
+
+    def __read_special_nodes(self, special_nodes_xml: Xml.Element) -> None:
+        """
+        Read the special nodes information and save it
+        :param special_nodes_xml: pointer to the special nodes information xml tree
+        :return: nothing
+        """
+        # For all high performance switches, add them and all the nodes that belong to him
+        for high_switch_xml in special_nodes_xml.findall('HighPerformanceSwitch'):  # type: Xml.Element
+            high_switch_id = int(high_switch_xml.find('NodeID').text)
+            self.__high_switches[high_switch_id] = []
+
+            # Add the high switch too
+            self.__high_switches[high_switch_id].append(high_switch_id)
+            self.__belong_high[high_switch_id] = high_switch_id
+
+            # For all the nodes that belong to the performance node, init the data
+            member_nodes_xml: Xml.Element = high_switch_xml.find('MemberNodes')
+            for node_xml in member_nodes_xml.findall('NodeID'):     # type: Xml.Element
+                node_id = int(node_xml.text)
+                self.__high_switches[high_switch_id].append(node_id)
+                self.__belong_high[node_id] = high_switch_id
+
+    def __read_general_information_xml(self, general_info_xml: Xml.Element) -> None:
+        """
+        Read the general information of the simulation
+        :param general_info_xml: pointer to the general information xml tree
+        :return: nothing
+        """
+        self.__algorithm: Simulation.Algorithm = self.Algorithm[general_info_xml.find('Algorithm').text]
+        if self.__algorithm.ISHP:
+            self.__read_special_nodes(general_info_xml.find('SpecialNodes'))
+        try:
+            self.__time_classification = int(general_info_xml.find('TimeClassification').text)
+        except AttributeError:
+            self.__add_database = False
+
+    def __read_events_xml(self, events_xml: Xml.Element) -> None:
+        """
+        Read the events to simulate
+        :param events_xml: pointer to the events information xml tree
+        :return: nothing
+        """
+        # For all events, save it into the event simulator
+        for failure_xml in events_xml.findall('Failure'):  # type: Xml.Element
+            component_type = self.EventsStarters.Component[failure_xml.attrib['component']]
+            component_id = int(failure_xml.find('ID').text)
+            time_xml: Xml.Element = failure_xml.find('Time')
+            event_time = Network.TimeUnit.convert_ns(int(time_xml.text), time_xml.attrib['unit'])
+
+            self.__events.append(self.EventsStarters(component_type, component_id, event_time))
+
+        # Sort the events queue by time
+        self.__events = sorted(self.__events, key=attrgetter('time'))
+
+    def __read_patched_schedule_xml(self, patched_file: str, broken_link: int) -> None:
+        """
+        Read and save the patched schedule
+        :param patched_file: file and path of the patched file
+        :param broken_link: broken link identifier
+        :return: nothing
+        """
+        # Open the xml file and get the root
+        root_xml: Xml.Element = Xml.parse(patched_file).getroot()
+
+        # Read the link identifier of the path
+        patched_link = int(root_xml.find('GeneralInformation/LinkID').text)
+
+        # Read all the transmissions of all the patched frames and save them into the frame
+        frames = self.__network.frames
+        for frame_xml in root_xml.findall('TrafficInformation/Frame'):  # type: Xml.Element
+            frame_id = int(frame_xml.find('FrameID').text)
+
+            frames[frame_id].add_offset(patched_link)
+            frames[frame_id].prepare_link_offset(patched_link, frames[frame_id].offsets[broken_link].num_instances, 0)
+
+            for instance, instance_xml in enumerate(frame_xml.findall('Instance')):
+                transmission_time = int(instance_xml.find('TransmissionTime').text) * self.__network.time_slot_size
+                ending_time = int(instance_xml.find('EndingTime').text) * self.__network.time_slot_size
+
+                frames[frame_id].set_offset_transmission_time(patched_link, instance, 0, transmission_time)
+                frames[frame_id].set_offset_ending_time(patched_link, instance, 0, ending_time)
+
+    def __read_execution_time_xml(self, execution_file: str) -> None:
+        """
+        Read the execution of the last algorithm called
+        :param execution_file: path and name of the execution file
+        :return: nothing
+        """
+        # Open the xml file and get the root
+        root_xml: Xml.Element = Xml.parse(execution_file).getroot()
+
+        self.__execution_time = int(root_xml.find('Timing/ExecutionTime').text)
