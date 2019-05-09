@@ -1,0 +1,321 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration>
+    <Evaluation>
+        <Name>SmallNetwork50Exhaustive3LinkFailure</Name>
+        <Input algorithm="SingleSimulation">
+            <GenerateNetwork>0</GenerateNetwork>
+            <NetworkFile>NetworkSmall50.xml</NetworkFile>
+            <ScheduleFile>ScheduleSmall50.xml</ScheduleFile>
+            <LinkDepth>3</LinkDepth>
+            <DistanceFailure unit="s">10</DistanceFailure>
+        </Input>
+        <Output>
+            <AddDatabase>0</AddDatabase>
+            <TimeClassification unit="ms">250</TimeClassification>
+        </Output>
+    </Evaluation>
+    <Network>
+        <GeneralInformation>
+            <SwitchInformation>
+                <MinimumTime unit="ns">0</MinimumTime>
+            </SwitchInformation>
+            <SelfHealingProtocol>
+                <Period unit="ms">1</Period>
+                <Time unit="us">10</Time>
+            </SelfHealingProtocol>
+        </GeneralInformation>
+        <TopologyInformation>
+            <Node category="EndSystem">
+                <NodeID>0</NodeID>
+                <Connection>
+                    <NodeID>3</NodeID>
+                    <Link category="Wired">
+                        <LinkID>0</LinkID>
+                        <Speed unit="MBs">50</Speed>
+                    </Link>
+                </Connection>
+                <Connection>
+                    <NodeID>4</NodeID>
+                    <Link category="Wired">
+                        <LinkID>1</LinkID>
+                        <Speed unit="MBs">50</Speed>
+                    </Link>
+                </Connection>
+            </Node>
+            <Node category="EndSystem">
+                <NodeID>1</NodeID>
+                <Connection>
+                    <NodeID>3</NodeID>
+                    <Link category="Wired">
+                        <LinkID>2</LinkID>
+                        <Speed unit="MBs">50</Speed>
+                    </Link>
+                </Connection>
+                <Connection>
+                    <NodeID>4</NodeID>
+                    <Link category="Wired">
+                        <LinkID>3</LinkID>
+                        <Speed unit="MBs">50</Speed>
+                    </Link>
+                </Connection>
+            </Node>
+            <Node category="EndSystem">
+                <NodeID>2</NodeID>
+                <Connection>
+                    <NodeID>3</NodeID>
+                    <Link category="Wired">
+                        <LinkID>4</LinkID>
+                        <Speed unit="MBs">50</Speed>
+                    </Link>
+                </Connection>
+                <Connection>
+                    <NodeID>4</NodeID>
+                    <Link category="Wired">
+                        <LinkID>5</LinkID>
+                        <Speed unit="MBs">50</Speed>
+                    </Link>
+                </Connection>
+            </Node>
+            <Node category="Switch">
+                <NodeID>3</NodeID>
+                <Connection>
+                    <NodeID>0</NodeID>
+                    <Link category="Wired">
+                        <LinkID>6</LinkID>
+                        <Speed unit="MBs">50</Speed>
+                    </Link>
+                </Connection>
+                <Connection>
+                    <NodeID>1</NodeID>
+                    <Link category="Wired">
+                        <LinkID>7</LinkID>
+                        <Speed unit="MBs">50</Speed>
+                    </Link>
+                </Connection>
+                <Connection>
+                    <NodeID>2</NodeID>
+                    <Link category="Wired">
+                        <LinkID>8</LinkID>
+                        <Speed unit="MBs">50</Speed>
+                    </Link>
+                </Connection>
+                <Connection>
+                    <NodeID>6</NodeID>
+                    <Link category="Wired">
+                        <LinkID>9</LinkID>
+                        <Speed unit="MBs">50</Speed>
+                    </Link>
+                </Connection>
+                <Connection>
+                    <NodeID>8</NodeID>
+                    <Link category="Wired">
+                        <LinkID>10</LinkID>
+                        <Speed unit="MBs">50</Speed>
+                    </Link>
+                </Connection>
+                <Connection>
+                    <NodeID>7</NodeID>
+                    <Link category="Wired">
+                        <LinkID>11</LinkID>
+                        <Speed unit="MBs">50</Speed>
+                    </Link>
+                </Connection>
+                <Connection>
+                    <NodeID>5</NodeID>
+                    <Link category="Wired">
+                        <LinkID>12</LinkID>
+                        <Speed unit="MBs">100</Speed>
+                    </Link>
+                </Connection>
+            </Node>
+            <Node category="Switch">
+                <NodeID>4</NodeID>
+                <Connection>
+                    <NodeID>0</NodeID>
+                    <Link category="Wired">
+                        <LinkID>13</LinkID>
+                        <Speed unit="MBs">50</Speed>
+                    </Link>
+                </Connection>
+                <Connection>
+                    <NodeID>1</NodeID>
+                    <Link category="Wired">
+                        <LinkID>14</LinkID>
+                        <Speed unit="MBs">50</Speed>
+                    </Link>
+                </Connection>
+                <Connection>
+                    <NodeID>2</NodeID>
+                    <Link category="Wired">
+                        <LinkID>15</LinkID>
+                        <Speed unit="MBs">50</Speed>
+                    </Link>
+                </Connection>
+                <Connection>
+                    <NodeID>6</NodeID>
+                    <Link category="Wired">
+                        <LinkID>16</LinkID>
+                        <Speed unit="MBs">50</Speed>
+                    </Link>
+                </Connection>
+                <Connection>
+                    <NodeID>7</NodeID>
+                    <Link category="Wired">
+                        <LinkID>17</LinkID>
+                        <Speed unit="MBs">50</Speed>
+                    </Link>
+                </Connection>
+                <Connection>
+                    <NodeID>8</NodeID>
+                    <Link category="Wired">
+                        <LinkID>18</LinkID>
+                        <Speed unit="MBs">50</Speed>
+                    </Link>
+                </Connection>
+                <Connection>
+                    <NodeID>5</NodeID>
+                    <Link category="Wired">
+                        <LinkID>19</LinkID>
+                        <Speed unit="MBs">100</Speed>
+                    </Link>
+                </Connection>
+            </Node>
+            <Node category="Switch">
+                <NodeID>5</NodeID>
+                <Connection>
+                    <NodeID>3</NodeID>
+                    <Link category="Wired">
+                        <LinkID>20</LinkID>
+                        <Speed unit="MBs">100</Speed>
+                    </Link>
+                </Connection>
+                <Connection>
+                    <NodeID>4</NodeID>
+                    <Link category="Wired">
+                        <LinkID>21</LinkID>
+                        <Speed unit="MBs">100</Speed>
+                    </Link>
+                </Connection>
+            </Node>
+            <Node category="EndSystem">
+                <NodeID>6</NodeID>
+                <Connection>
+                    <NodeID>3</NodeID>
+                    <Link category="Wired">
+                        <LinkID>22</LinkID>
+                        <Speed unit="MBs">50</Speed>
+                    </Link>
+                </Connection>
+                <Connection>
+                    <NodeID>4</NodeID>
+                    <Link category="Wired">
+                        <LinkID>23</LinkID>
+                        <Speed unit="MBs">50</Speed>
+                    </Link>
+                </Connection>
+            </Node>
+            <Node category="EndSystem">
+                <NodeID>7</NodeID>
+                <Connection>
+                    <NodeID>3</NodeID>
+                    <Link category="Wired">
+                        <LinkID>24</LinkID>
+                        <Speed unit="MBs">50</Speed>
+                    </Link>
+                </Connection>
+                <Connection>
+                    <NodeID>4</NodeID>
+                    <Link category="Wired">
+                        <LinkID>25</LinkID>
+                        <Speed unit="MBs">50</Speed>
+                    </Link>
+                </Connection>
+            </Node>
+            <Node category="EndSystem">
+                <NodeID>8</NodeID>
+                <Connection>
+                    <NodeID>3</NodeID>
+                    <Link category="Wired">
+                        <LinkID>26</LinkID>
+                        <Speed unit="MBs">50</Speed>
+                    </Link>
+                </Connection>
+                <Connection>
+                    <NodeID>4</NodeID>
+                    <Link category="Wired">
+                        <LinkID>27</LinkID>
+                        <Speed unit="MBs">50</Speed>
+                    </Link>
+                </Connection>
+            </Node>
+        </TopologyInformation>
+        <TrafficDescription method="generate">
+            <TrafficInformation>
+                <NumberFrames>50</NumberFrames>
+                <NumberSingle>5</NumberSingle>
+                <NumberLocal>0</NumberLocal>
+                <NumberMulti>20</NumberMulti>
+                <NumberBroadcast>25</NumberBroadcast>
+            </TrafficInformation>
+            <FrameDescription>
+                <FrameType>
+                    <NumberFrames>15</NumberFrames>
+                    <Period unit="ms">10</Period>
+                    <Deadline unit="ms">10</Deadline>
+                    <Size unit="Byte">1500</Size>
+                    <StartingTime unit="ns">0</StartingTime>
+                    <EndToEnd unit="ms">2</EndToEnd>
+                </FrameType>
+                <FrameType>
+                    <NumberFrames>15</NumberFrames>
+                    <Period unit="ms">20</Period>
+                    <Deadline unit="ms">20</Deadline>
+                    <Size unit="Byte">1500</Size>
+                    <StartingTime unit="ns">0</StartingTime>
+                    <EndToEnd unit="ms">4</EndToEnd>
+                </FrameType>
+                <FrameType>
+                    <NumberFrames>20</NumberFrames>
+                    <Period unit="ms">40</Period>
+                    <Deadline unit="ms">40</Deadline>
+                    <Size unit="Byte">1500</Size>
+                    <StartingTime unit="ns">0</StartingTime>
+                    <EndToEnd unit="ms">8</EndToEnd>
+                </FrameType>
+            </FrameDescription>
+        </TrafficDescription>
+    </Network>
+    <Schedule>
+        <Algorithm name="OneShot">
+            <MIPGAP>0.00</MIPGAP>
+            <TimeLimit>60.0</TimeLimit>
+            <FramesIteration>1</FramesIteration>
+        </Algorithm>
+    </Schedule>
+    <Simulation>
+        <GeneralInformation>
+            <Algorithm>ISHP</Algorithm>
+                <SpecialNodes>
+                    <HighPerformanceSwitch>
+                        <NodeID>4</NodeID>
+                        <MemberNodes>
+                            <NodeID>0</NodeID>
+                            <NodeID>1</NodeID>
+                            <NodeID>2</NodeID>
+                            <NodeID>3</NodeID>
+                            <NodeID>5</NodeID>
+                            <NodeID>6</NodeID>
+                            <NodeID>7</NodeID>
+                            <NodeID>8</NodeID>
+                        </MemberNodes>
+                    </HighPerformanceSwitch>
+                </SpecialNodes>
+        </GeneralInformation>
+        <Events>
+            <Failure component="Link">
+                <ID>2</ID>
+                <Time unit="s">1</Time>
+            </Failure>
+        </Events>
+    </Simulation>
+</Configuration>
